@@ -1,0 +1,16 @@
+{
+  "name": "알파벳 마을 - 5학년 영어 복습",
+  "short_name": "알파벳 마을",
+  "description": "5학년 2학기 영어 Lesson 7~12 단어와 문장을 친구들과 함께 복습하는 3D 마을 게임",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#2b5266",
+  "theme_color": "#2b5266",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
