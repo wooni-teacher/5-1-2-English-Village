@@ -911,7 +911,7 @@ const NPC_QUESTS=[
 // 튜토리얼 (첫 접속 안내)
 const TUTORIAL=[
   {stat:'mined',n:3,text:'광석 3번 캐기',hint:'레슨 구역의 바위 앞에서 E(⛏️)를 눌러요.',reward:{exp:10,coins:10}},
-  {stat:'words',n:1,text:'단어 1개 완성하기',hint:'광장의 🔨 단어 제작대에서 만들어요.',reward:{exp:10,coins:10}},
+  {stat:'words',n:1,text:'단어 1개 완성하기',hint:'🔨 단어 제작대에서 만들어요. 광장과 옷 가게, 캠핑장 구역에 있어요.',reward:{exp:10,coins:10}},
   {stat:'sentences',n:1,text:'문장 1개 완성하기',hint:'🔥 문장 제작소에서 단어 블록을 순서대로 놓아요.',reward:{exp:15,coins:10}},
   {report:true,text:'NPC에게 보고하기',hint:'광장 둘레의 토토, 루나, 모모 중 한 명에게 말을 걸어요.',reward:{exp:15,coins:15}},
   {stat:'trees',n:1,text:'내 섬에 나무 1그루 심기',hint:'🏡 내 섬 → 🔨 건축하기 → 🌳 나무를 골라요.',reward:{exp:50,coins:50,items:{hat_straw:1,apple:2}}}
@@ -1192,6 +1192,8 @@ function buildZone(L,i){
     const ts=new THREE.Group(); ts.position.set(0,5.9,2.2); g.add(ts);
     box(1.4,1.6,.2,0x3fbf6a,0,0,0,ts); box(.6,.5,.2,0x3fbf6a,-.95,.45,0,ts); box(.6,.5,.2,0x3fbf6a,.95,.45,0,ts);
     [-4.6,4.6].forEach(v=>{ const [mx,mz]=P(7,v); mesh(new THREE.CylinderGeometry(.35,.45,1.5,10),mat(0xffffff),mx,.75,mz); mesh(new THREE.SphereGeometry(.35,12,10),mat(0xffe3b3),mx,1.8,mz); box(.7,.12,.12,0x222222,mx,1.85,mz); collide(mx,mz,.6); });
+    // [수정] 옷 가게 구역 단어 제작대
+    { const [wbx,wbz]=P(-9,-3); buildWorkBench(wbx,wbz,...face,'🔨 단어 제작대 (옷 가게)'); }
   } else if(L.n===9){
     const [x,z]=P(9,0); const dia=mesh(new THREE.BoxGeometry(6.5,.06,6.5),mat(0xc98c5a),x,.05,z); dia.rotation.y=Math.PI/4+Z.a; dia.castShadow=false;
     [[0,3.8],[3.8,0],[0,-3.8],[-3.8,0]].forEach(([a,b])=>{ const [bx,bz]=P(9+a*.95,b*.95); box(.5,.12,.5,0xffffff,bx,.1,bz); });
@@ -1215,6 +1217,8 @@ function buildZone(L,i){
     const [fx,fz]=P(6.5,0); for(let q=0;q<3;q++){ const lg=box(1.4,.25,.25,0x6b4226,fx,.15,fz); lg.rotation.y=q*Math.PI/3; }
     const fire=mesh(new THREE.ConeGeometry(.5,1.1,6),new THREE.MeshBasicMaterial({color:0xff8c1a}),fx,.7,fz); FIRES.push(fire); collide(fx,fz,.8);
     [[13,-7],[14,6],[12.5,9]].forEach(([u,v])=>tree(...P(u,v),1.1));
+    // [수정] 캠핑장 구역 단어 제작대
+    { const [wbx,wbz]=P(-9,-3); buildWorkBench(wbx,wbz,...face,'🔨 단어 제작대 (캠핑장)'); }
   }
 }
 function makeOre(x,z,L){
@@ -1233,6 +1237,14 @@ function pickLetter(n){
   return pick(LESSON_LETTERS[n]||ALL_LETTERS);
 }
 const STATIONS=[];
+// [수정] 단어 제작대는 이제 마을 세 곳에 있어요. 어디서 열어도 모든 레슨의 단어를 다 고를 수 있어요.
+function buildWorkBench(x,z,faceX,faceZ,label='🔨 단어 제작대'){
+  const wg=new THREE.Group(); wg.position.set(x,0,z); scene.add(wg);
+  box(2.6,.25,1.5,0xb07a45,0,1,0,wg); [[-1.1,-.55],[1.1,-.55],[-1.1,.55],[1.1,.55]].forEach(([u,v])=>box(.2,1,.2,0x6b4226,u,.5,v,wg));
+  [0xffc93c,0x3cc6b4,0xff6b8b].forEach((c,q)=>box(.35,.35,.35,c,-.6+q*.6,1.3,0,wg)); wg.lookAt(faceX,0,faceZ); collide(x,z,1.5);
+  const wl=textSprite(label,{font:'56px Jua',h:.8}); wl.position.set(x,3.1,z); scene.add(wl);
+  Interact.add({kind:'work',x,z,r:3.6,icon:'✋',enabled:()=>true,label:()=>'단어 제작대 열기',use:()=>UI.open('work')});
+}
 function buildPlaza(){
   const at=(deg,r)=>{const a=deg*Math.PI/180;return [Math.sin(a)*r,-Math.cos(a)*r];};
   const addStation=(kind,x,z,r,label,icon,use)=>Interact.add({kind,x,z,r,icon,label:()=>label(),use,enabled:()=>true});
@@ -1245,11 +1257,7 @@ function buildPlaza(){
   [[-.8,2.2],[.2,2.3],[.9,1.7],[-.4,1.5]].forEach(([u,v])=>box(.7,.55,.04,0xfff8e6,u,v,.1,bg)); bg.lookAt(0,0,0); collide(bx,bz,1.4);
   const bl=textSprite('📜 의뢰 게시판',{font:'56px Jua',h:.8}); bl.position.set(bx,3.6,bz); scene.add(bl);
   addStation('board',bx,bz,3.6,()=>GS.isStudent()?'의뢰 게시판 보기':'촌장님 집무실 열기','✋',()=>UI.open(GS.isStudent()?'board':'admin'));
-  const [wx,wz]=at(150,8.5); const wg=new THREE.Group(); wg.position.set(wx,0,wz); scene.add(wg);
-  box(2.6,.25,1.5,0xb07a45,0,1,0,wg); [[-1.1,-.55],[1.1,-.55],[-1.1,.55],[1.1,.55]].forEach(([u,v])=>box(.2,1,.2,0x6b4226,u,.5,v,wg));
-  [0xffc93c,0x3cc6b4,0xff6b8b].forEach((c,q)=>box(.35,.35,.35,c,-.6+q*.6,1.3,0,wg)); wg.lookAt(0,0,0); collide(wx,wz,1.5);
-  const wl=textSprite('🔨 단어 제작대',{font:'56px Jua',h:.8}); wl.position.set(wx,3.1,wz); scene.add(wl);
-  addStation('work',wx,wz,3.6,()=>'단어 제작대 열기','✋',()=>UI.open('work'));
+  const [wx,wz]=at(150,8.5); buildWorkBench(wx,wz,0,0,'🔨 단어 제작대 (광장)');
   const [fx,fz]=at(210,8.5); const fg2=new THREE.Group(); fg2.position.set(fx,0,fz); scene.add(fg2);
   box(2.4,1.8,1.8,0x8d8d8d,0,.9,0,fg2); box(1,.8,.1,0x2b1a0e,0,.8,.91,fg2);
   const glow=new THREE.Mesh(new THREE.BoxGeometry(.8,.5,.1),new THREE.MeshBasicMaterial({color:0xff8c1a})); glow.position.set(0,.7,.93); fg2.add(glow); FIRES.push(glow);
@@ -3382,7 +3390,7 @@ const Recommend={
   },
   run(c){
     if(c.act==='focus'&&c.kind==='word'&&WORDS[c.id]){ GS.focusWord=WORDS[c.id]; GS.change(); UI.close();
-      toast(`🎯 <b class="en">${esc(WORDS[c.id].en)}</b>을(를) 골랐어요! 단어 제작대(광장 서쪽)로 가 봐요.`,5000); return; }
+      toast(`🎯 <b class="en">${esc(WORDS[c.id].en)}</b>을(를) 골랐어요! 가까운 🔨 단어 제작대로 가 봐요.`,5000); return; }
     if(c.act==='focus'){ UI.close(); const s=SENTS[c.id]; toast(s?`🎯 문장 제작소에서 「${esc(s.ko)}」 문장을 만들어 봐요!`:'제작대로 가 봐요!',5000); return; }
     if(c.act==='dungeon'){ UI.close(); toast('⚔️ 마을 광장 가운데 포털로 가면 던전에 들어갈 수 있어요!',5000); return; }
     if(c.act==='season') return UI.open('season');
