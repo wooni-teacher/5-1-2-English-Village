@@ -467,14 +467,13 @@ import * as THREE from 'three';
      콘솔에서만 등록하고, 규칙이 그 UID인지 확인해요.
    - apiKey 또는 databaseURL이 비어 있으면 '체험 모드'(이 기기에만 저장, 혼자 놀기)로 실행돼요. */
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyB7jCVyieaTKyvarkAvaDLNinxUWppTCdI",
+  apiKey: "",
   authDomain: "banwel-51.firebaseapp.com",
-  databaseURL: "https://banwel-51-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL: "",
   projectId: "banwel-51",
-  storageBucket: "banwel-51.firebasestorage.app",
-  messagingSenderId: "489949688381",
-  appId: "1:489949688381:web:680ce2806ba0f2e810b054",
-  measurementId: "G-4ZZ6PVVKR2"
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
 };
 const ROOT = 'english5';
 const STUDENT_EMAIL_DOMAIN = 'alphabet-village.app'; // 학생 계정용 가짜 이메일 도메인(실제 메일은 가지 않아요)
@@ -613,6 +612,7 @@ function mulberry(a){ return ()=>{ a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>1
 const nameSort=(a,b)=>a.localeCompare(b,'ko',{numeric:true});
 const costText=c=>Object.entries(c||{}).map(([k,v])=>`${RES_NAMES[k]||ITEM_DEFS[k]?.emoji||k}${v}`).join(' ')||'무료';
 async function sha256hex(t){ const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+function fmtStamp(t){ const d=new Date((+t||0)+9*3600e3); return `${d.getUTCMonth()+1}월 ${d.getUTCDate()}일`; } // [수정] 시각(숫자) → 한국 날짜 글자
 function timeAgo(t){ const m=Math.round((Date.now()-t)/60000); if(m<1) return '방금'; if(m<60) return m+'분 전'; const h=Math.round(m/60); if(h<24) return h+'시간 전'; return Math.round(h/24)+'일 전'; }
 
 let audioCtx=null;
@@ -4507,7 +4507,7 @@ function renderAdmin4(tab){
 function adminSeason(){
   const c=Season.cur, A=Season.active();
   let h=`<div class="kv"><span>현재 시즌</span><span>${c?`${esc(c.title)} (${A?'진행 중':c.status==='ended'?'끝남':'대기'})`:'없음'}</span>
-    <span>기간</span><span>${c?`${fmtDate(c.startAt)} ~ ${fmtDate(c.endAt)}`:'-'}</span></div>`;
+    <span>기간</span><span>${c?`${fmtStamp(c.startAt)} ~ ${fmtStamp(c.endAt)}`:'-'}</span></div>`;
   h+=`<h3>새 시즌 열기</h3><div class="chips">${Object.values(SEASONS).map(s=>`<button class="tab ${sn4.preset===s.key?'on':''}" data-act="sn-preset" data-k="${s.key}">${s.emoji} ${s.title}</button>`).join('')}</div>
     <div class="form"><label>기간(일) <input id="sn-days" type="number" min="1" max="120" value="${sn4.days}"></label>
       <label class="wide">시즌 안내 문구 <input id="sn-note" maxlength="60" value="${esc(SEASONS[sn4.preset].intro)}"></label>
@@ -4751,7 +4751,7 @@ function renderMylog(){
 }
 function reportBody(){
   const r=Report.mine();
-  return `<div class="print-area"><h3>📈 이번 주 나의 기록</h3><p class="p-sub">${fmtDate(r.since)} 부터 오늘까지</p>
+  return `<div class="print-area"><h3>📈 이번 주 나의 기록</h3><p class="p-sub">${fmtStamp(r.since)}부터 오늘까지</p>
     <div class="kv"><span>새로 만든 단어</span><span>${r.newWords}개</span><span>새로 만든 문장</span><span>${r.newSents}개</span>
       <span>단어 만들기</span><span>${r.words}번</span><span>문장 만들기</span><span>${r.sentences}번</span><span>문제 맞히기</span><span>${r.quiz}개</span></div>
     <h3>가장 많이 성장한 활동</h3><p class="p-sub">${r.growth&&r.growth.n?`${GROWTH_LABELS[r.growth.k]} <b>${r.growth.n}번</b> — 정말 잘했어요!`:'이번 주는 아직 조용해요. 오늘 한 가지만 해 볼까요?'}</p>
