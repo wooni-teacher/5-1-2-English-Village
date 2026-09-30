@@ -384,6 +384,33 @@ td.c,th.c{text-align:center}
 @media print{ body>*{display:none!important} #panel-wrap,#panel-wrap *{display:revert!important} #panel-wrap{position:static!important;background:#fff!important;color:#111!important}
   .panel{background:#fff!important;color:#111!important;box-shadow:none!important;border:none!important;max-height:none!important}
   .tabs,.btn,button{display:none!important} .print-area{color:#111!important} .kv,.chip,.rec{background:#f2f2f2!important;color:#111!important} }
+/* [추가] 촌장님과 1:1 퀴즈 */
+#croom-hud{display:flex;gap:8px;align-items:center;justify-content:center;background:var(--gem);color:#1a1a1a;border-radius:16px;padding:6px 12px;box-shadow:0 4px 0 #b88a00;font-family:'Jua',sans-serif}
+#croom{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(560px,94vw);max-height:48vh;overflow-y:auto;
+  background:var(--slate);border:3px solid var(--slate-d);box-shadow:0 6px 0 var(--slate-d);border-radius:20px;padding:12px 14px;z-index:30}
+#croom .cr-head{display:flex;justify-content:space-between;align-items:center;font-size:17px;margin-bottom:6px}
+#croom .cr-head span{color:var(--gem)}
+#croom .cr-q{font-family:'Jua',sans-serif;font-size:21px;line-height:1.45;background:var(--slate-l);border-radius:14px;padding:10px 12px;margin:6px 0}
+#croom .cr-q small{display:block;font-size:12px;color:var(--ink-soft);font-family:'Noto Sans KR',sans-serif}
+#croom .cr-q.wait{font-size:17px;color:var(--ink-soft)}
+#croom .cr-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+#croom .cr-row.end{justify-content:flex-end}
+#croom input,#croom textarea,#croom select{font-family:inherit;font-size:16px;border-radius:12px;border:3px solid var(--slate-d);background:var(--slate-l);color:var(--ink);padding:8px 10px}
+#croom #cr-in,#croom #cr-text,#croom #cr-hint,#croom #cr-answer,#croom #cr-bank{flex:1;min-width:0}
+#croom textarea{width:100%;resize:vertical;margin-top:6px}
+#croom .cr-opt{display:flex;gap:6px;align-items:center;margin-top:6px}
+#croom .cr-opt input[type=text],#croom .cr-opt input:not([type]){flex:1}
+#croom .cr-mini{display:flex;gap:4px;align-items:center;font-size:14px}
+#croom .cr-mini input[type=number]{width:70px}
+#croom .cr-box{border:2px dashed var(--slate-d);border-radius:14px;padding:8px 10px;margin:8px 0}
+#croom .cr-ans{font-size:18px}
+#croom .tag{font-size:12px;border-radius:8px;padding:2px 6px}
+#croom .tag.ok{background:var(--leaf);color:var(--leaf-ink)} #croom .tag.no{background:#ff6b8b;color:#fff}
+#croom .pulse{animation:crpulse 1s infinite}
+@keyframes crpulse{50%{transform:scale(1.07)}}
+#croom details summary{cursor:pointer;font-family:'Jua',sans-serif;font-size:16px}
+#croom .choices{margin-top:6px}
+@media (pointer:coarse){ #croom{bottom:calc(150px + env(safe-area-inset-bottom,0px));max-height:40vh} }
 body.role-chief .student-only{display:none!important}
 body:not(.role-chief) .chief-only{display:none!important}
 @media (max-width:600px){ .p-head h2{font-size:22px} .craft-ko{font-size:20px} .tile{width:44px;height:50px;font-size:24px} .slot{width:40px;height:48px;font-size:26px} }
@@ -441,10 +468,11 @@ body:not(.role-chief) .chief-only{display:none!important}
     <button class="btn" data-open="help" aria-label="도움말">❓</button>
     <button class="btn gem chief-only" data-open="admin">👑 집무실</button>
   </div>
-  <div id="center-top"><div id="class-hud" class="hidden"></div><div id="season-hud" class="hidden"></div><div id="notice" class="hidden"></div><div id="raid-hud" class="hidden"></div><div id="ev-hud" class="hidden"></div><div id="visit-bar" class="hidden"></div></div>
+  <div id="center-top"><div id="croom-hud" class="hidden"></div><div id="class-hud" class="hidden"></div><div id="season-hud" class="hidden"></div><div id="notice" class="hidden"></div><div id="raid-hud" class="hidden"></div><div id="ev-hud" class="hidden"></div><div id="visit-bar" class="hidden"></div></div>
   <div id="right-stack"><div id="dg-hud" class="hidden"></div><div id="party-hud" class="hidden"></div></div>
   <div id="map-bar" class="hidden"></div>
   <div id="net-hud" class="hidden"></div>
+  <div id="croom" class="hidden"></div>
   <div id="err-bar" class="hidden"></div>
   <div id="build-bar" class="hidden"></div>
   <div id="prompt" class="hidden"></div>
@@ -1258,7 +1286,7 @@ function buildPlaza(){
   const [hx,hz]=at(30,10.5); building(hx,hz,6.5,5,3.8,0xfff1d6,0xd94f4f,0,0);
   box(.12,3.2,.12,0x888888,hx,5.6,hz); box(1.2,.8,.05,0xffc93c,hx+.62,6.7,hz);
   const hl=textSprite('👑 촌장님 집',{font:'56px Jua',h:.9}); hl.position.set(hx,7.9,hz); scene.add(hl);
-  addStation('chief',hx,hz,5.6,()=>GS.isStudent()?'👑 촌장님 퀴즈방 들어가기':'촌장님 집무실 열기','✋',()=>{ if(GS.isStudent()){ cqs.sel=null; cqs.msg=''; cqs.hint=false; UI.open('chiefquiz'); } else UI.open('admin'); }); // [추가] 촌장님 퀴즈방
+  addStation('chief',hx,hz,5.6,()=>GS.isStudent()?'👑 촌장님과 1:1 퀴즈':'촌장님 집무실 열기','✋',()=>UI.open(GS.isStudent()?'chiefroom':'admin')); // [추가] 촌장님과 1:1 퀴즈
   const [bx,bz]=at(330,8.5); const bg=new THREE.Group(); bg.position.set(bx,0,bz); scene.add(bg);
   box(.2,2.6,.2,0x8a5a36,-1.3,1.3,0,bg); box(.2,2.6,.2,0x8a5a36,1.3,1.3,0,bg); box(3,1.7,.15,0xa0703f,0,1.9,0,bg);
   [[-.8,2.2],[.2,2.3],[.9,1.7],[-.4,1.5]].forEach(([u,v])=>box(.7,.55,.04,0xfff8e6,u,v,.1,bg)); bg.lookAt(0,0,0); collide(bx,bz,1.4);
@@ -1331,7 +1359,7 @@ function plotAt(x,z){
   for(const P of plots){ if(Math.abs(x-P.cx)>14||Math.abs(z-P.cz)>14) continue; const [lx,lz]=worldToPlot(P,x,z); if(Math.abs(lx)<8.7&&Math.abs(lz)<8.7) return P; }
   return null;
 }
-function walkable(x,z){ return Math.hypot(x,z)<73 || Math.hypot(x-DUN.x,z-DUN.z)<DUN.r || !!plotAt(x,z) || Maps.inStage(x,z); }
+function walkable(x,z){ return Math.hypot(x,z)<73 || Math.hypot(x-DUN.x,z-DUN.z)<DUN.r || !!plotAt(x,z) || Maps.inStage(x,z) || ChiefRoom.inRoom(x,z); }
 
 /* ╔══════════════════════════════════════════════════════════════╗
    ║ §6 AVATAR & EFFECTS                                            ║
@@ -1509,7 +1537,7 @@ const Multi={ remotes:{}, raw:{}, lastSay:null, lastEmo:null, lastSent:0, lastKe
       // [3차] 챌린지 무대에서는 같은 코스를 하는 친구만 보여요
       // [4차] 너무 먼 친구는 그리지 않아요 (저사양 기기 보호)
       const far=Math.hypot(r.cur.x-pos.x,r.cur.z-pos.z)>Perf.q.remoteDist;
-      r.av.visible=!far&&(!Maps.inStage(r.cur.x,r.cur.z)||(!!Maps.id&&r.m===Maps.id));
+      r.av.visible=!far&&(!Maps.inStage(r.cur.x,r.cur.z)||(!!Maps.id&&r.m===Maps.id))&&(!ChiefRoom.inRoom(r.cur.x,r.cur.z)||ChiefRoom.partner(uid)); // [추가] 1:1 방은 둘만
       animAvatar(r.av,Math.hypot(r.cur.x-ox,r.cur.z-oz)/Math.max(dt,1e-3),dt); }
   },
   studentsOnline(){ return Object.values(this.remotes).filter(r=>r.role!=='chief').length+(GS.isStudent()?1:0); },
@@ -1744,6 +1772,7 @@ const Dungeon={
     WAVES[n-1].forEach((t,i)=>{ const hp=Math.round(MONSTER_TYPES[t].hp*f); out[`m${n}_${i}`]={type:t,hp,max:hp}; }); return out; },
   meEntry(prev){ return {name:GS.me.name,color:GS.me.color,dmg:prev?.dmg||0,hp:this.hp,joinedAt:FB.now()}; },
   async tryEnter(){
+    if(ChiefRoom.here()) return toast('👑 촌장님 방에서는 던전에 갈 수 없어요. 1:1 퀴즈를 마치고 가요!');
     if(Raid.fighting()) return toast('👾 레이드 중에는 포털이 닫혀 있어요. 광장의 괴물부터 물리쳐요!'); if(Maps.mode) return; // [3차]
     if(!GS.isStudent()){ toast('던전은 학생 모험가만 들어갈 수 있어요. 촌장님은 집무실에서 지켜봐 주세요!'); return; }
     const now=FB.now(), inv=GS.inv;
@@ -2366,9 +2395,9 @@ const Social={
   isFriend(u){ return !!this.friends[u]; }, isBlocked(u){ return !!this.blocks[u]; },
   nameOf(u){ return GS.profiles[u]?.name||Multi.raw[u]?.name||'모험가'; },
   online(u){ return !!Multi.raw[u]; },
-  loc(){ if(Dungeon.inside) return 'dungeon'; if(Maps.mode) return 'map'; const P=plotAt(pos.x,pos.z); if(P) return 'plot:'+(P.owner||'');
+  loc(){ if(ChiefRoom.here()) return 'chiefroom'; if(Dungeon.inside) return 'dungeon'; if(Maps.mode) return 'map'; const P=plotAt(pos.x,pos.z); if(P) return 'plot:'+(P.owner||'');
     if(Raid.active()&&Math.hypot(pos.x,pos.z)<RAID.zoneR) return 'raid'; return 'village'; },
-  locText(l){ if(!l) return '오프라인'; if(l==='dungeon') return '⚔️ 던전'; if(l==='map') return '🏁 챌린지 코스'; if(l==='raid') return '👾 레이드';
+  locText(l){ if(!l) return '오프라인'; if(l==='chiefroom') return '👑 촌장님 방'; if(l==='dungeon') return '⚔️ 던전'; if(l==='map') return '🏁 챌린지 코스'; if(l==='raid') return '👾 레이드';
     if(l.startsWith('plot:')){ const o=l.slice(5); return o===me_()?'🏝️ 내 섬':o?`🏝️ ${esc(this.nameOf(o))}의 섬`:'🏝️ 빈 섬'; } return '🏘️ 마을'; },
   // --- 친구 ---
   async addByCode(code){
@@ -3562,7 +3591,7 @@ const UI={
       npc:renderNpc,shop:renderShop,craft:renderCraft,attend:renderAttend,
       social:renderSocial,profile:renderProfile,invite:renderInvite,report:renderReport,guestbook:renderGuestbook,raid:renderRaid,raidresult:renderRaidResult,maps:renderMaps,mapresult:renderMapResult, // [3차]
       season:renderSeason,settings:renderSettings,safety:renderSafety, // [4차]
-      mylog:renderMylog,lesson:renderLesson,lessonresult:renderLessonResult,chiefquiz:renderChiefQuiz}[this.modal]; // [5차] // [2차] npc·shop·craft·attend
+      mylog:renderMylog,lesson:renderLesson,lessonresult:renderLessonResult,chiefroom:renderChiefRoomEntry}[this.modal]; // [5차] // [2차] npc·shop·craft·attend
     panelEl.className='panel'+(['battle','dgresult','raid','raidresult'].includes(this.modal)?' dark':''); panelEl.innerHTML=f(); panelEl.scrollTop=st;
   },
   refresh(){ this.hud(); if(!this.modal) return;
@@ -3601,7 +3630,7 @@ const UI={
   },
   locHud(){
     if(!GS.started) return; const onPlot=!!plotAt(pos.x,pos.z), mine=Build.onMyPlot();
-    const home=$('#btn-home'); home.textContent=onPlot?'🏘️ 마을로':'🏡 내 섬'; home.classList.toggle('hidden',Dungeon.inside||!GS.isStudent()||!!Maps.mode);
+    const home=$('#btn-home'); home.textContent=onPlot?'🏘️ 마을로':'🏡 내 섬'; home.classList.toggle('hidden',Dungeon.inside||!GS.isStudent()||!!Maps.mode||ChiefRoom.here());
     $('#btn-build').classList.toggle('hidden',!mine||Build.mode||!GS.isStudent());
   },
   eventHud(){
@@ -3810,7 +3839,7 @@ function renderHelp(){
     <li><div>🌀 던전 포털에서 영어 문제로 몬스터와 싸워요.<small>연속으로 맞히면 콤보! 희귀 장식이나 펫이 나올지도 몰라요.</small></div></li>
     <li><div>🛒 냥냥 상점에서 사고, 🛠️ 장비 공방에서 곡괭이와 가방을 만들어요.<small>🎒 가방 → 장비 탭에서 장착하고, 펫 탭에서 펫을 데리고 다녀요.</small></div></li>
     <li><div>🏡 내 섬에서 🔨 건축하기로 섬을 꾸며요.<small>단어 연구소는 시간이 지나면 필요한 알파벳을 만들어 줘요.</small></div></li>
-    <li><div>👑 촌장님 집을 누르면 촌장님 퀴즈방이 열려요.<small>선생님이 직접 낸 문제를 풀어요. 처음 맞히면 보상! 집 위에 ❓가 떠 있으면 새 문제가 있다는 뜻이에요.</small></div></li>
+    <li><div>👑 촌장님 집을 누르면 촌장님과 1:1 퀴즈를 신청할 수 있어요.<small>촌장님이 부르면 둘만 있는 촌장님 방으로 이동해요. 촌장님이 직접 낸 문제를 맞히면 보상! 집 위에 🙋 표시가 있으면 촌장님이 마을에 계신 거예요.</small></div></li>
     <li><div>🎪 시즌마다 마을이 바뀌어요.<small>봄 꽃 축제·여름 해변·가을 수확·겨울 눈꽃! 활동하면 시즌 점수가 쌓여 보상 트랙을 받아요. 시즌이 끝나도 아이템과 건축물은 그대로예요.</small></div></li>
     <li><div>⚙️ 설정에서 그래픽 품질을 바꿀 수 있어요.<small>휴대전화가 느리면 ‘낮음’으로 바꿔 보세요. 🛡️ 안전 약속도 여기서 볼 수 있어요.</small></div></li>
     <li><div>👥 친구 코드로 친구를 사귀고 파티를 만들어요.<small>친구 섬에 놀러 가서 👍 좋아요와 🎨 칭찬 스티커를 남겨요. 주말엔 광장에 👾 영어 괴물 대왕이 나타나요!</small></div></li>
@@ -3927,7 +3956,7 @@ function adminQuestList(){
     return `<div class="sub-row"><span class="nm">${fmtDate(q.date)}</span><span class="info">${esc(qTitle(q))}, 단어 ${q.nWords}개 문장 ${q.nSentences}개${q.note?'<br>'+esc(q.note):''}</span><span>👑 ${ok} ⏳ ${wait}</span><button class="btn sm" data-act="q-del" data-id="${q.id}">지우기</button></div>`; }).join('');
 }
 function renderAdmin(){
-  const tabs=[['quest','의뢰 내기'],['check','확인 도장'],['cquiz','❓ 촌장님 퀴즈'],['daily','날마다 확인표'],['stats','학생 현황'],['event','마을 이벤트'],['dungeon','던전'],['raid','👾 레이드'],['maps','🏁 코스 관리'],['class','🏫 학급'],['lesson','🎓 수업'],['templates','📦 템플릿'],['weekly','📈 주간 리포트'],['season','🎪 시즌'],['studio','🛠️ 콘텐츠 제작'],['analytics','📊 학습 분석'],['trash','🗑 휴지통'],['reports',`🚩 신고${Object.keys(GS.reports||{}).length?' ('+Object.keys(GS.reports).length+')':''}`],['notice','공지'],['account','내 계정']];
+  const tabs=[['quest','의뢰 내기'],['check','확인 도장'],['cquiz','👑 1:1 퀴즈'],['daily','날마다 확인표'],['stats','학생 현황'],['event','마을 이벤트'],['dungeon','던전'],['raid','👾 레이드'],['maps','🏁 코스 관리'],['class','🏫 학급'],['lesson','🎓 수업'],['templates','📦 템플릿'],['weekly','📈 주간 리포트'],['season','🎪 시즌'],['studio','🛠️ 콘텐츠 제작'],['analytics','📊 학습 분석'],['trash','🗑 휴지통'],['reports',`🚩 신고${Object.keys(GS.reports||{}).length?' ('+Object.keys(GS.reports).length+')':''}`],['notice','공지'],['account','내 계정']];
   let h=head('👑 촌장님 집무실','')+`<div class="tabs">${tabs.map(([k,t])=>{ const n=k==='check'?pendingSubs().length:0; return `<button class="tab ${adm.tab===k?'on':''}" data-act="adm-tab" data-k="${k}">${t}${n?` (${n})`:''}</button>`; }).join('')}</div>`;
   const students=Object.entries(GS.profiles).sort((a,b)=>nameSort(realName(a[0]),realName(b[0])));
   if(adm.tab==='quest') h+=`<div class="form"><label>날짜 <input type="date" id="q-date" value="${today()}"></label>
@@ -3974,7 +4003,7 @@ function renderAdmin(){
   else if(['raid','maps','reports'].includes(adm.tab)) h+=renderAdmin3(adm.tab); // [3차]
   else if(['season','studio','analytics','trash'].includes(adm.tab)) h+=renderAdmin4(adm.tab); // [4차]
   else if(['class','lesson','templates','weekly'].includes(adm.tab)) h+=renderAdmin5(adm.tab); // [5차]
-  else if(adm.tab==='cquiz') h+=renderAdminCQ(); // [추가] 촌장님 퀴즈
+  else if(adm.tab==='cquiz') h+=renderAdminCQ(); // [추가] 1:1 퀴즈 문제함
   else h+=`<p class="p-sub">이 계정의 UID예요. 보안 규칙의 english5/admins 에 이 값이 true로 등록되어 있어야 촌장님 권한이 생겨요.</p><p><span class="code">${esc(FB.uid)}</span></p>
       <p class="hint">${FB.mode==='offline'?'지금은 체험 모드예요.':'관리자 확인: 통과'}</p><button class="btn" data-act="logout">로그아웃</button>`;
   return h;
@@ -4128,7 +4157,7 @@ function start(){
   Studio.init(); Season.init(); TQuests.init(); Safety.init();
   // [5차] 학급·수업·추천·템플릿·배지
   Classes.init(); Session.init(); Recommend.init(); Templates.init(); Badges.init();
-  ChiefQuiz.init(); // [추가] 촌장님 퀴즈방
+  ChiefQuiz.init(); ChiefRoom.init(); // [추가] 촌장님과 1:1 퀴즈
   if(FB.isAdmin) setTimeout(()=>Studio.purgeOld(),8000);
   if(GS.isStudent()) setTimeout(()=>Maps.claimFans(),5000);
   if(FB.mode==='online'){ FB.onDisconnectRemove('players/'+GS.me.uid); Multi.send(performance.now(),true); }
@@ -4171,9 +4200,9 @@ function tickBody(){
     camWant.set(camTarget.x+Math.sin(camYaw)*cp*camDist,Math.max(.6,camTarget.y+Math.sin(camPitch)*camDist),camTarget.z+Math.cos(camYaw)*cp*camDist);
     camera.position.lerp(camWant,1-Math.exp(-dt*10)); camera.lookAt(camTarget);
     sun.position.set(pos.x+40,70,pos.z+25); sun.target.position.set(pos.x,0,pos.z);
-    EventSys.drive(); EventSys.updateVisuals(dt,now); Dungeon.update(dt,now); Pets.update(dt,now); Npc.update(dt,now); Raid.update(dt,now); Raid.tick(now); Party.tick(now); Season.update(dt); ChiefQuiz.update(); GS.flush();
+    EventSys.drive(); EventSys.updateVisuals(dt,now); Dungeon.update(dt,now); Pets.update(dt,now); Npc.update(dt,now); Raid.update(dt,now); Raid.tick(now); Party.tick(now); Season.update(dt); ChiefRoom.update(dt); GS.flush();
     if(now-lastHud2>3000){ lastHud2=now; UI.hud(); if(GS.isStudent()){ Daily.ensure(); if(Attendance.pending&&!UI.modal){ Attendance.pending=false; if(!Attendance.claimedToday()) UI.open('attend'); } } }
-    if(now-lastHud>500){ lastHud=now; UI.eventHud(); UI.dungeonHud(); UI.locHud(); UI.partyHud(); UI.raidHud(); UI.visitBar(); UI.socialBadge(); Social.showQueued(); UI.seasonHud(); UI.netHud(); UI.classHud(); if(FB.isAdmin) Session.tick(); if(UI.modal==='admin'&&['event','dungeon'].includes(adm.tab)) UI.render(); }
+    if(now-lastHud>500){ lastHud=now; UI.eventHud(); UI.dungeonHud(); UI.locHud(); UI.partyHud(); UI.raidHud(); UI.visitBar(); UI.socialBadge(); Social.showQueued(); UI.seasonHud(); UI.netHud(); UI.classHud(); UI.croomHud(); if(FB.isAdmin) Session.tick(); if(UI.modal==='admin'&&['event','dungeon'].includes(adm.tab)) UI.render(); }
   } else { const t=now/9000; camera.position.set(Math.sin(t)*38,22,Math.cos(t)*38); camera.lookAt(0,0,0); }
   if(!Dungeon.inside) for(const o of ores){
     if(!o.active){ if(now>o.respawn){ o.active=true; o.hp=Growth.pickHits(); o.g.visible=true; setOreLetter(o,pickLetter(o.lesson)); } continue; }
@@ -4963,187 +4992,379 @@ panelEl.addEventListener('click',async e=>{
 });
 
 /* ╔══════════════════════════════════════════════════════════════╗
-   ║ §41 [추가] CHIEF QUIZ — 촌장님 퀴즈방 (선생님이 직접 내는 퀴즈)  ║
+   ║ §41 [추가] CHIEF ROOM — 촌장님 방 1:1 퀴즈                      ║
    ╚══════════════════════════════════════════════════════════════╝
-   chiefQuiz/{qid}          = {q, type:'choice'|'short', options[], ah[](정답 암호값), hint, reward:{coins,exp}, open, at}
-   chiefQuizKey/{qid}       = {answer}      ← 진짜 정답 글자는 선생님만 읽을 수 있어요
-   chiefQuizAns/{qid}/{uid} = {name, ok, tries, firstOk, last(마지막으로 적은 답), at}   ← 선생님 결과 화면용
-   inventory/{uid}.cq       = {qid:{ok, tries, firstOk}}   ← 내 풀이 상태 (보상 중복 방지는 claims['cq:'+qid])
-   ⚠ TODO(서버): 채점·보상은 Cloud Functions(onCall: answerChiefQuiz)로 옮기면 조작을 완전히 막을 수 있어요. */
-const CQ={qMax:80,optMax:30,ansMax:40,hintMax:40,maxOptions:4,coinMax:100,expMax:200};
+   흐름: 학생이 👑 촌장님 집을 누름 → 1:1 퀴즈 신청(대기 줄) → 촌장님이 "맞이하기"
+        → 두 사람만 촌장님 방으로 이동 → 촌장님이 문제를 직접 써서 보냄 → 학생이 답함
+        → 촌장님이 ⭕/❌ → 끝내기 (학생은 촌장님 집 앞으로, 촌장님은 다음 학생을 맞이)
+   chiefRoom/queue/{uid}   = {name, at}                         대기 줄 (학생 본인이 넣고 빼요, 접속이 끊기면 자동으로 빠져요)
+   chiefRoom/state         = {sid, student, name, state:'active'|'ended', at, endedAt}   촌장님만 시작/끝, 학생은 끝내기만
+   chiefRoom/q             = {sid, n, text, type:'short'|'choice', options[], reward, at}   지금 문제 (촌장님만)
+   chiefRoom/a             = {sid, n, text, at}                 학생의 답 (그 방의 학생만)
+   chiefRoom/mark          = {sid, n, ok, at}                   촌장님의 ⭕/❌ (촌장님만)
+   chiefRoomLog/{uid}/{id} = {q, a, ok, at}                     학생별 1:1 기록 (촌장님만 읽고 써요)
+   chiefQuiz/{id} · chiefQuizKey/{id}                           촌장님이 미리 만들어 둔 문제함 (촌장님만)
+   ⚠ TODO(서버): 보상 지급은 Cloud Functions에서 mark를 확인하고 주면 조작을 완전히 막을 수 있어요. */
+const CR={x:420,z:0,hw:8.4,hd:6.4,qMax:80,optMax:30,ansMax:60,hintMax:40,coinMax:100,expMax:200,
+  teacherSeat:[420,-2.6,0], studentSeat:[420,2.6,Math.PI]};  // [x, z, 바라보는 방향]
+const CQ={qMax:80,optMax:30,ansMax:40,hintMax:40,coinMax:100,expMax:200};
 const cqNorm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' ').replace(/[.!?,~]+$/,'');
 const cqHash=s=>'h'+hashStr('cq:'+cqNorm(s)).toString(36);
-const cqs={sel:null,msg:'',ok:false,hint:false}, cqf={edit:null,draft:null,open:{}};
+const cqf={edit:null,draft:null};
+
+// --- 문제함: 촌장님이 미리 만들어 두고 1:1 방에서 불러 써요 ---
 const ChiefQuiz={
-  all:{}, keys:{}, answers:{}, loaded:false, sign:null, last:0,
-  init(){
-    this.makeSign();
-    FB.on('chiefQuiz',v=>{ const prev=this.all; this.all=v||{}; if(this.loaded) this.notifyNew(prev); this.loaded=true;
-      this.updateSign(); this.refreshAdmin(); if(UI.modal==='chiefquiz') UI.render(); });
-    if(FB.isAdmin){
-      FB.on('chiefQuizKey',v=>{ this.keys=v||{}; this.refreshAdmin(); });
-      FB.on('chiefQuizAns',v=>{ this.answers=v||{}; this.refreshAdmin(); });
-    }
-  },
-  st(qid){ if(!GS.inv) return {}; if(!GS.inv.cq||typeof GS.inv.cq!=='object') GS.inv.cq={}; return GS.inv.cq[qid]||{ok:false,tries:0}; },
-  list(all=false){ return Object.entries(this.all).filter(([,Q])=>Q&&(all||Q.open)).sort((a,b)=>(b[1].at||0)-(a[1].at||0)); },
-  unsolved(){ return GS.isStudent()?this.list().filter(([id])=>!this.st(id).ok).length:0; },
-  notifyNew(prev){
-    if(!GS.isStudent()) return;
-    const fresh=this.list().filter(([id])=>!prev[id]?.open);
-    if(fresh.length){ toast(`👑 촌장님이 새 퀴즈를 냈어요! <b>촌장님 집</b>으로 가 봐요.`,5000); tune([523,659,784]); }
-  },
-  // 촌장님 집 위에 떠 있는 ❓ 표시 (안 푼 문제가 있을 때만)
-  makeSign(){ const a=30*Math.PI/180; this.sign=textSprite('❓ 촌장님 퀴즈!',{font:'52px Jua',h:.8,bg:'rgba(201,139,0,.95)'});
-    this.sign.position.set(Math.sin(a)*10.5,9.3,-Math.cos(a)*10.5); this.sign.visible=false; scene.add(this.sign); },
-  updateSign(){ if(this.sign) this.sign.visible=this.unsolved()>0; },
-  update(){ if(this.sign?.visible) this.sign.position.y=9.3+Math.sin(performance.now()/400)*.15; },
+  all:{}, keys:{},
+  init(){ if(!FB.isAdmin) return;
+    FB.on('chiefQuiz',v=>{ this.all=v||{}; this.refreshAdmin(); ChiefRoom.renderPanel(); });
+    FB.on('chiefQuizKey',v=>{ this.keys=v||{}; this.refreshAdmin(); }); },
+  list(){ return Object.entries(this.all).filter(([,Q])=>Q).sort((a,b)=>(b[1].at||0)-(a[1].at||0)); },
   refreshAdmin(){ if(UI.modal!=='admin'||adm.tab!=='cquiz') return; cqCapture(); UI.render(); },
-  // --- 학생: 답 내기 ---
-  async answer(qid,val){
-    const Q=this.all[qid]; if(!Q||!Q.open) return toast('지금은 풀 수 없는 문제예요.');
-    const raw=String(val??'').slice(0,CQ.ansMax); if(!cqNorm(raw)) return toast('답을 적어 주세요.');
-    const t=performance.now(); if(t-this.last<1200) return; this.last=t; // 연타 방지
-    const ok=[].concat(Q.ah||[]).includes(cqHash(raw));
-    cqs.ok=ok; cqs.msg=ok?'⭕ 정답이에요! 촌장님이 칭찬해요.':'❌ 아쉬워요. 다시 생각해 볼까요?';
-    if(ok){ tune([659,880,1047]); if(player) burst(pos.x,2,pos.z,0xffc93c,16); } else beep(180,.25,'sawtooth',.05);
-    if(!GS.isStudent()){ cqs.msg+=' (선생님 미리 보기라 기록되지 않아요)'; UI.render(); return; }
-    const s=this.st(qid); if(s.ok){ UI.render(); return; }
-    s.tries=(s.tries||0)+1; if(s.tries===1) s.firstOk=ok; if(ok) s.ok=true;
-    GS.inv.cq[qid]=s; GS.change();
-    FB.set(`chiefQuizAns/${qid}/${GS.me.uid}`,{name:GS.me.name,ok:!!s.ok,tries:s.tries,firstOk:!!s.firstOk,last:raw,at:FB.serverTs()}).catch(()=>{});
-    if(ok){ Bus.emit('learn',{kind:'quiz'});
-      if(Rewards.give('cq:'+qid,Q.reward||{coins:10,exp:10})) cqs.msg+=`  보상 ${rewardText(Q.reward||{coins:10,exp:10})}`; }
-    this.updateSign(); UI.render();
-  },
-  // --- 선생님: 만들기·고치기·지우기 ---
+  update(){},
   async save(f){
     if(!FB.isAdmin) return;
     const q=String(f.q||'').trim().slice(0,CQ.qMax); if(!q) return toast('문제를 적어 주세요.');
-    const type=f.type==='short'?'short':'choice', hint=String(f.hint||'').trim().slice(0,CQ.hintMax);
-    const reward={coins:Math.max(0,Math.min(CQ.coinMax,Math.round(+f.coins||0))),exp:Math.max(0,Math.min(CQ.expMax,Math.round(+f.exp||0)))};
-    let options=[], answer='', ah=[];
+    const type=f.type==='choice'?'choice':'short', hint=String(f.hint||'').trim().slice(0,CQ.hintMax);
+    const reward={coins:cqClamp(f.coins,CQ.coinMax,10),exp:cqClamp(f.exp,CQ.expMax,10)};
+    let options=[], answer='';
     if(type==='choice'){
       options=(f.options||[]).map(o=>String(o||'').trim().slice(0,CQ.optMax)).filter(Boolean);
       if(options.length<2) return toast('보기를 2개 이상 적어 주세요.');
-      if(new Set(options.map(cqNorm)).size!==options.length) return toast('똑같은 보기가 있어요. 보기를 다르게 적어 주세요.');
-      answer=String(f.options?.[+f.correct]??'').trim(); if(!answer) return toast('정답 보기를 골라 주세요. (정답 보기에 글자가 있어야 해요)');
-      ah=[cqHash(answer)];
-    } else {
-      answer=String(f.short||'').trim().slice(0,CQ.ansMax*2); const alts=answer.split('/').map(s=>s.trim()).filter(Boolean);
-      if(!alts.length) return toast('정답을 적어 주세요. 여러 개면 / 로 나눠요. (예: apple / an apple)');
-      ah=[...new Set(alts.map(cqHash))];
-    }
+      if(new Set(options.map(cqNorm)).size!==options.length) return toast('똑같은 보기가 있어요.');
+      answer=String(f.options?.[+f.correct]??'').trim(); if(!answer) return toast('정답 보기를 골라 주세요.');
+    } else answer=String(f.short||'').trim().slice(0,CQ.ansMax*2);
     const id=f.id||('cq'+FB.now().toString(36)+Math.random().toString(36).slice(2,4));
-    const prevAt=this.all[id]?.at||FB.now();
-    try{
-      await FB.set('chiefQuiz/'+id,{q,type,options,ah,hint,reward,open:!!f.open,at:prevAt});
-      await FB.set('chiefQuizKey/'+id,{answer});
-      toast(f.id?'✏️ 문제를 고쳤어요.':f.open?'📢 문제를 내고 학생들에게 공개했어요!':'💾 문제를 저장했어요. 공개를 누르면 학생에게 보여요.');
-      cqf.edit=null; cqf.draft=null; UI.render();
-    }catch(e){ toast('저장하지 못했어요. 보안 규칙에 chiefQuiz가 있는지 확인해 주세요.'); }
+    try{ await FB.set('chiefQuiz/'+id,{q,type,options,hint,reward,at:this.all[id]?.at||FB.now()}); await FB.set('chiefQuizKey/'+id,{answer});
+      toast(f.id?'✏️ 문제를 고쳤어요.':'💾 문제함에 넣었어요. 1:1 방에서 📚 불러오기로 쓸 수 있어요.'); cqf.edit=null; cqf.draft=null; UI.render(); }
+    catch(e){ toast('저장하지 못했어요. 보안 규칙에 chiefQuiz가 있는지 확인해 주세요.'); }
   },
-  setOpen(id,v){ FB.update('chiefQuiz/'+id,{open:!!v,...(v?{at:FB.now()}:{})}); toast(v?'📢 학생들에게 공개했어요.':'🙈 숨겼어요. 학생 화면에서 사라져요.'); },
-  async remove(id){ if(!confirm('이 문제와 학생들의 풀이 기록을 지울까요?')) return;
-    await FB.remove('chiefQuizAns/'+id).catch(()=>{}); await FB.remove('chiefQuizKey/'+id).catch(()=>{}); await FB.remove('chiefQuiz/'+id).catch(()=>{}); toast('🗑 문제를 지웠어요.'); },
-  stats(id){ const rows=Object.entries(this.answers[id]||{}); const n=rows.length, ok=rows.filter(([,r])=>r.ok).length, first=rows.filter(([,r])=>r.firstOk).length;
-    return {rows,n,ok,first,rate:n?Math.round(first/n*100):null}; }
+  async remove(id){ if(!confirm('문제함에서 이 문제를 지울까요?')) return;
+    await FB.remove('chiefQuizKey/'+id).catch(()=>{}); await FB.remove('chiefQuiz/'+id).catch(()=>{}); toast('🗑 지웠어요.'); }
 };
-function cqCapture(){ // 선생님이 문제를 쓰는 중에 화면이 새로 그려져도 적던 글이 사라지지 않게 해요
-  const g=id=>document.getElementById(id); if(!g('cq-q')) return;
+function cqClamp(v,max,def){ const n=Math.round(+v); return Number.isFinite(n)?Math.max(0,Math.min(max,n)):def; }
+function cqCapture(){ const g=id=>document.getElementById(id); if(!g('cq-q')) return;
   cqf.draft={q:g('cq-q').value,type:g('cq-type').value,options:[0,1,2,3].map(i=>g('cq-o'+i)?.value||''),
     correct:+(document.querySelector('input[name="cq-correct"]:checked')?.value??0),short:g('cq-short')?.value||'',hint:g('cq-hint').value,
-    coins:g('cq-coins').value,exp:g('cq-exp').value,open:g('cq-open').checked,id:cqf.edit};
-}
+    coins:g('cq-coins').value,exp:g('cq-exp').value,id:cqf.edit}; }
 
-// --- 학생 화면: 촌장님 퀴즈방 ---
-function renderChiefQuiz(){
-  let h=head('👑 촌장님 퀴즈방','촌장님(선생님)이 직접 낸 문제예요. 처음 맞히면 보상을 받고, 틀려도 다시 도전할 수 있어요!');
-  const Q=cqs.sel&&ChiefQuiz.all[cqs.sel];
-  if(Q&&(Q.open||!GS.isStudent())){
-    const s=ChiefQuiz.st(cqs.sel), done=GS.isStudent()&&s.ok;
-    h+=`<button class="btn sm" data-act="cq-back">← 문제 목록</button>
-      <div class="craft" style="margin-top:10px"><div class="craft-top"><span class="craft-ko" style="font-size:22px;line-height:1.5">${esc(Q.q)}</span></div>`;
-    if(cqs.msg) h+=`<p class="result ${cqs.ok?'ok':'no'}">${esc(cqs.msg)}</p>`;
-    if(done) h+='<p class="p-sub">✅ 이미 맞힌 문제예요. 다른 문제도 풀어 볼까요?</p>';
-    else if(Q.type==='choice') h+=`<div class="choices">${(Q.options||[]).map((o,i)=>`<button class="wtile" data-act="cq-opt" data-i="${i}">${esc(o)}</button>`).join('')}</div>`;
-    else h+=`<div class="form"><label class="wide">답 적기 <input id="cq-in" maxlength="${CQ.ansMax}" autocomplete="off" placeholder="여기에 답을 적어요"></label>
-      <div><button class="btn gem" data-act="cq-submit">제출하기</button></div></div><p class="hint">대문자·소문자, 끝의 마침표는 신경 쓰지 않아도 돼요.</p>`;
-    if(Q.hint&&!done) h+=cqs.hint?`<p class="hint">💡 힌트: ${esc(Q.hint)}</p>`:'<button class="btn sm" data-act="cq-hint">💡 힌트 보기</button>';
-    h+=`<p class="hint">보상: ${rewardText(Q.reward||{})}${GS.isStudent()&&s.tries?` · 지금까지 ${s.tries}번 도전`:''}</p></div>`;
+// --- 촌장님 방 ---
+const ChiefRoom={
+  state:null, q:null, a:null, mark:null, queue:{}, built:false, board:null, boardText:'', sign:null, myQueued:false,
+  log:[], logFor:null, correct:0, asked:0, wasHere:false, prevCam:null, form:{type:'short',text:'',options:['','','',''],correct:0,answer:'',coins:10,exp:10,bank:'',save:false,hint:''},
+  inRoom(x,z){ return Math.abs(x-CR.x)<CR.hw&&Math.abs(z-CR.z)<CR.hd; },
+  here(){ return this.inRoom(pos.x,pos.z); },
+  active(){ return this.state?.state==='active'; },
+  isMine(){ return GS.isStudent()&&this.active()&&this.state.student===GS.me.uid; },
+  chiefOnline(){ return Object.values(Multi.raw||{}).some(p=>p&&p.role==='chief'); },
+  partner(uid){ const s=this.state; if(!this.active()) return false; const p=Multi.raw?.[uid]; return p?.role==='chief'||uid===s.student; },
+  queueList(){ return Object.entries(this.queue).filter(([,v])=>v).sort((a,b)=>(a[1].at||0)-(b[1].at||0)); },
+  init(){
+    this.build();
+    FB.on('chiefRoom/state',v=>this.onState(v));
+    FB.on('chiefRoom/q',v=>{ this.q=v; this.onQuestion(); this.renderPanel(); });
+    FB.on('chiefRoom/a',v=>{ const prev=this.a; this.a=v; if(FB.isAdmin&&v&&(!prev||prev.at!==v.at)){ beep(880,.08,'triangle',.06); } this.renderPanel(); });
+    FB.on('chiefRoom/mark',v=>{ const prev=this.mark; this.mark=v; if(v&&(!prev||prev.at!==v.at)) this.onMark(v); this.renderPanel(); });
+    FB.on('chiefRoom/queue',v=>{ const before=this.queueList().length; this.queue=v||{}; const after=this.queueList().length;
+      this.myQueued=GS.isStudent()&&!!this.queue[GS.me.uid];
+      if(FB.isAdmin&&after>before) { toast(`🙋 <b>${esc(this.queueList().at(-1)?.[1]?.name||'학생')}</b> 학생이 1:1 퀴즈를 신청했어요!`,5000); tune([659,880]); }
+      UI.croomHud(); if(UI.modal==='chiefroom') UI.render(); this.renderPanel(); });
+  },
+  // 방 모양: 카메라가 잘 보이도록 지붕 없이 낮은 벽으로 둘러싼 아늑한 서재예요.
+  build(){
+    if(this.built) return; this.built=true; const X=CR.x, Z=CR.z, g=new THREE.Group(); scene.add(g);
+    box(CR.hw*2+1.6,1.2,CR.hd*2+1.6,0x7a5a3a,X,-.62,Z,g).castShadow=false;           // 받침
+    box(CR.hw*2,.06,CR.hd*2,0xe8c89a,X,.0,Z,g).castShadow=false;                       // 나무 바닥
+    box(7,.04,4.6,0x8e5bd6,X,.05,Z,g).castShadow=false; box(6.4,.05,4,0xb28cff,X,.06,Z,g).castShadow=false; // 러그
+    const W=0xfff1d6, T=0xd94f4f;
+    [[X,Z-CR.hd,CR.hw*2+.4,.3],[X,Z+CR.hd,CR.hw*2+.4,.3]].forEach(([x,z,w,d])=>{ box(w,1.1,d,W,x,.55,z,g); box(w+.1,.15,d+.1,T,x,1.15,z,g); });
+    [[X-CR.hw,Z],[X+CR.hw,Z]].forEach(([x,z])=>{ box(.3,1.1,CR.hd*2,W,x,.55,z,g); box(.4,.15,CR.hd*2+.1,T,x,1.15,z,g); });
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>{ box(.5,2.6,.5,0xc98c5a,X+a*CR.hw,1.3,Z+b*CR.hd,g); mesh(new THREE.SphereGeometry(.34,12,10),mat(0xffc93c,{emissive:0x553300}),X+a*CR.hw,2.8,Z+b*CR.hd,g); });
+    // 책상과 의자
+    box(3.4,.14,1.7,0xa0703f,X,1.02,Z,g); [[-1.5,-.7],[1.5,-.7],[-1.5,.7],[1.5,.7]].forEach(([a,b])=>box(.16,1,.16,0x6b4226,X+a,.5,Z+b,g));
+    box(.5,.35,.4,0xffffff,X-.9,1.26,Z,g); box(.3,.4,.3,0x3cc6b4,X+1,1.29,Z-.2,g); mesh(new THREE.SphereGeometry(.2,10,8),mat(0xff6b8b),X+1,1.6,Z-.2,g);
+    [[CR.teacherSeat,0xd94f4f],[CR.studentSeat,0x4fa3ff]].forEach(([[sx,sz],c])=>{ box(1,.14,1,c,sx,.62,sz,g); [[-.4,-.4],[.4,-.4],[-.4,.4],[.4,.4]].forEach(([a,b])=>box(.1,.6,.1,0x6b4226,sx+a,.3,sz+b,g));
+      box(1,1,.12,c,sx,1.15,sz+(sz<Z?-.45:.45),g); });
+    collide(X-1,Z,1.05); collide(X+1,Z,1.05); collide(X,Z,1.05);
+    // 책장·화분·지구본
+    [[-1],[1]].forEach(([s])=>{ const bx=X+s*(CR.hw-.7); box(1,2.4,3.4,0x6b4226,bx,1.2,Z-3,g);
+      for(let r=0;r<3;r++) for(let k=0;k<5;k++) box(.5,.5,.22,[0xff6b8b,0xffc93c,0x3cc6b4,0x4fa3ff,0x9b8cff][(k+r)%5],bx+s*-.15,.5+r*.75,Z-4.3+k*.6,g);
+      collide(bx,Z-3,1.4); mesh(new THREE.CylinderGeometry(.4,.3,.6,10),mat(0xb5653a),bx,.3,Z+4,g); mesh(new THREE.SphereGeometry(.7,10,8),mat(0x3f9e4d),bx,1.1,Z+4,g); collide(bx,Z+4,.6); });
+    const globe=mesh(new THREE.SphereGeometry(.35,14,10),mat(0x4fa3ff),X+5,1.5,Z-4.6,g); box(.1,1.2,.1,0x888888,X+5,.6,Z-4.6,g); this.globe=globe; collide(X+5,Z-4.6,.4);
+    // 칠판: 지금 문제가 크게 보여요
+    box(.2,3,.2,0x6b4226,X-4.2,1.5,Z-4.6,g); box(.2,3,.2,0x6b4226,X-1.8,1.5,Z-4.6,g); box(2.8,1.8,.12,0x2e5e4e,X-3,2.3,Z-4.6,g); collide(X-3,Z-4.6,1.2);
+    const lab=textSprite('👑 촌장님의 1:1 퀴즈방',{font:'60px Jua',h:1.1,bg:'rgba(201,139,0,.95)'}); lab.position.set(X,5.6,Z-CR.hd); g.add(lab);
+    this.setBoard('촌장님이 문제를 준비하고 있어요 ✏️');
+    // 촌장님 집 위 표시: 촌장님이 마을에 계실 때만 떠요
+    const a=30*Math.PI/180; this.sign=textSprite('🙋 촌장님과 1:1 퀴즈',{font:'52px Jua',h:.8,bg:'rgba(30,143,128,.95)'});
+    this.sign.position.set(Math.sin(a)*10.5,9.3,-Math.cos(a)*10.5); this.sign.visible=false; scene.add(this.sign);
+  },
+  setBoard(text){ const t=String(text||'').slice(0,26)+(String(text||'').length>26?'…':''); if(t===this.boardText) return; this.boardText=t;
+    if(this.board){ scene.remove(this.board); disposeSprite(this.board); }
+    this.board=textSprite(t,{font:'48px Jua',h:.62,bg:'rgba(46,94,78,.98)',color:'#ffffff'}); this.board.position.set(CR.x,3.9,CR.z-2.2); scene.add(this.board); },
+  // --- 상태 변화 ---
+  onState(v){
+    const prev=this.state; this.state=v||null;
+    const me=GS.isStudent()?GS.me.uid:null;
+    if(v?.state==='active'&&(!prev||prev.sid!==v.sid||prev.state!=='active')){
+      this.correct=0; this.asked=0;
+      if(v.student===me){ UI.close(); this.enter(CR.studentSeat); toast('🚪 촌장님 방으로 들어왔어요! 촌장님이 문제를 내 주실 거예요.',4500); tune([523,659,784]); }
+      if(FB.isAdmin){ this.enter(CR.teacherSeat); this.loadLog(v.student); }
+    }
+    if(prev?.state==='active'&&(!v||v.state!=='active')){
+      if(prev.student===me&&this.here()){ toast(`👋 1:1 퀴즈를 마쳤어요! 오늘 맞힌 문제 ⭕ ${this.correct}개`,5000); this.leaveRoom(); }
+      if(FB.isAdmin&&v?.endedBy==='student') toast('🚪 학생이 방에서 나갔어요.');
+      this.setBoard('촌장님이 문제를 준비하고 있어요 ✏️');
+    }
+    UI.croomHud(); this.renderPanel(); if(UI.modal==='chiefroom') UI.render();
+  },
+  onQuestion(){ const q=this.q; if(!q||q.sid!==this.state?.sid){ this.setBoard('촌장님이 문제를 준비하고 있어요 ✏️'); return; }
+    this.setBoard('❓ '+q.text); if(this.isMine()){ beep(660,.1,'triangle',.06); setTimeout(()=>document.getElementById('cr-in')?.focus(),80); } },
+  onMark(m){
+    if(!this.q||m.sid!==this.state?.sid||m.n!==this.q.n) return;
+    const target=GS.isStudent()?player:(Multi.remotes[this.state?.student]?.av);
+    if(m.ok){ tune([659,880,1047,1319]); if(target) burst(target.position.x,2.4,target.position.z,0xffc93c,18); }
+    else beep(200,.2,'triangle',.05);
+    if(this.isMine()){
+      popAt(pos.x,pos.y+3.6,pos.z,m.ok?'⭕':'❌',m.ok?'':'hit');
+      if(m.ok){ this.correct++; const r=this.q.reward||{coins:10,exp:10};
+        if(Rewards.give(`cr:${m.sid}:${m.n}`,r)) toast(`⭕ 정답! 촌장님이 칭찬해 주셨어요.<br><small>${rewardText(r)}</small>`,3500);
+        Bus.emit('learn',{kind:'quiz'}); }
+    }
+  },
+  enter(seat){
+    if(Build.mode) Build.toggle(false); if(Maps.mode) Maps.close(true);
+    this.prevCam=this.prevCam??camDist; camDist=Math.min(camDist,8);
+    teleport(seat[0],seat[1],seat[2]); Multi.send(performance.now(),true); this.wasHere=true; UI.hud(); UI.croomHud(); this.renderPanel(true);
+  },
+  leaveRoom(){ if(this.prevCam!=null){ camDist=this.prevCam; this.prevCam=null; } this.wasHere=false;
+    const a=30*Math.PI/180; teleport(Math.sin(a)*5,-Math.cos(a)*5,Math.PI); Multi.send(performance.now(),true); UI.hud(); UI.croomHud(); this.renderPanel(true); }, // 촌장님 집 앞 광장으로
+  // --- 학생 ---
+  async apply(){
+    if(!GS.isStudent()) return;
+    if(this.isMine()) return;
+    try{ await FB.set('chiefRoom/queue/'+GS.me.uid,{name:GS.me.name,at:FB.serverTs()}); FB.onDisconnectRemove('chiefRoom/queue/'+GS.me.uid);
+      toast('🙋 1:1 퀴즈를 신청했어요! 촌장님이 부르면 방으로 이동해요. 그동안 마을에서 놀고 있어도 돼요.',5000); }
+    catch(e){ toast('신청하지 못했어요. 잠시 뒤에 다시 해 주세요.'); }
+  },
+  cancel(){ FB.remove('chiefRoom/queue/'+GS.me.uid); toast('신청을 취소했어요.'); },
+  answer(val){
+    if(!this.isMine()||!this.q) return; const text=String(val??'').trim().slice(0,CR.ansMax); if(!text) return toast('답을 적어 주세요.');
+    if(this.markedOk()) return; if(this.pending()) return toast('촌장님이 채점하고 있어요. 잠깐만 기다려요!');
+    const inEl=document.getElementById('cr-in'); if(inEl) inEl.value='';
+    FB.set('chiefRoom/a',{sid:this.state.sid,n:this.q.n,text,at:FB.serverTs()}).catch(()=>toast('답을 보내지 못했어요.')); beep(740,.06,'triangle',.05);
+  },
+  studentLeave(){ if(!this.isMine()) return this.leaveRoom(); if(!confirm('촌장님 방에서 나갈까요?')) return;
+    FB.update('chiefRoom/state',{state:'ended',endedAt:FB.serverTs(),endedBy:'student'}).catch(()=>this.leaveRoom()); },
+  // 지금 문제에 대한 상태
+  curA(){ const a=this.a, q=this.q; return a&&q&&a.sid===q.sid&&a.n===q.n?a:null; },
+  curMark(){ const m=this.mark, q=this.q; return m&&q&&m.sid===q.sid&&m.n===q.n?m:null; },
+  markedOk(){ return !!this.curMark()?.ok; },
+  pending(){ const a=this.curA(), m=this.curMark(); return !!a&&(!m||(m.at||0)<(a.at||0)); },
+  // --- 촌장님 ---
+  accept(uid){
+    if(!FB.isAdmin) return; const list=this.queueList(); const pickUid=uid||list[0]?.[0]; if(!pickUid) return toast('기다리는 학생이 없어요.');
+    const name=this.queue[pickUid]?.name||'학생', sid='cr'+FB.now().toString(36);
+    FB.remove('chiefRoom/q'); FB.remove('chiefRoom/a'); FB.remove('chiefRoom/mark'); FB.remove('chiefRoom/queue/'+pickUid);
+    FB.set('chiefRoom/state',{sid,student:pickUid,name,state:'active',at:FB.serverTs()}); UI.close();
+    this.form={...this.form,text:'',options:['','','',''],answer:'',bank:'',hint:''};
+  },
+  async loadLog(uid){ this.logFor=uid; this.log=[]; const v=await FB.get('chiefRoomLog/'+uid).catch(()=>null);
+    if(this.logFor!==uid) return; this.log=Object.values(v||{}).sort((a,b)=>(b.at||0)-(a.at||0)); this.renderPanel(); },
+  send(){
+    if(!FB.isAdmin||!this.active()) return; crCapture(); const f=this.form;
+    const text=String(f.text||'').trim().slice(0,CR.qMax); if(!text) return toast('문제를 적어 주세요.');
+    const type=f.type==='choice'?'choice':'short'; let options=[];
+    if(type==='choice'){ options=f.options.map(o=>String(o||'').trim().slice(0,CR.optMax)).filter(Boolean);
+      if(options.length<2) return toast('보기를 2개 이상 적어 주세요.'); }
+    const answer=type==='choice'?(String(f.options[+f.correct]||'').trim()):String(f.answer||'').trim().slice(0,CR.ansMax*2);
+    const reward={coins:cqClamp(f.coins,CR.coinMax,10),exp:cqClamp(f.exp,CR.expMax,10)};
+    const n=(this.q?.sid===this.state.sid?(this.q.n||0):0)+1;
+    this.key={n,answer}; this.asked=n;
+    FB.set('chiefRoom/q',{sid:this.state.sid,n,text,type,options,reward,hint:String(f.hint||'').slice(0,CR.hintMax),at:FB.serverTs()});
+    if(f.save&&!f.bank) ChiefQuiz.save({q:text,type,options:[...options,'','','',''].slice(0,4),correct:Math.max(0,options.indexOf(answer)),short:answer,hint:f.hint,coins:reward.coins,exp:reward.exp});
+    this.form={...this.form,text:'',options:['','','',''],answer:'',bank:'',save:false,hint:''}; this.renderPanel(true,true);
+  },
+  judge(ok){
+    if(!FB.isAdmin||!this.curA()) return; const a=this.curA();
+    FB.set('chiefRoom/mark',{sid:this.state.sid,n:this.q.n,ok:!!ok,at:FB.serverTs()});
+    FB.push('chiefRoomLog/'+this.state.student,{q:this.q.text,a:a.text,ok:!!ok,at:FB.serverTs()}).catch(()=>{});
+    this.log.unshift({q:this.q.text,a:a.text,ok:!!ok,at:FB.now()}); if(ok) this.correct++;
+  },
+  autoCheck(){ const a=this.curA(); if(!a||!this.key||this.key.n!==this.q?.n||!String(this.key.answer||'').trim()) return null;
+    return String(this.key.answer).split('/').map(s=>cqNorm(s)).filter(Boolean).includes(cqNorm(a.text)); },
+  end(){ if(!FB.isAdmin||!this.active()) return; FB.update('chiefRoom/state',{state:'ended',endedAt:FB.serverTs(),endedBy:'chief'}); FB.remove('chiefRoom/q'); FB.remove('chiefRoom/a'); FB.remove('chiefRoom/mark'); },
+  chiefExit(){ if(this.active()) this.end(); this.leaveRoom(); },
+  loadBank(id){ const Q=ChiefQuiz.all[id], key=ChiefQuiz.keys[id]?.answer||''; if(!Q) return;
+    this.form={...this.form,bank:id,type:Q.type,text:Q.q,hint:Q.hint||'',coins:Q.reward?.coins??10,exp:Q.reward?.exp??10,
+      options:[...(Q.options||[]),'','','',''].slice(0,4),correct:Math.max(0,(Q.options||[]).findIndex(o=>cqNorm(o)===cqNorm(key))),answer:Q.type==='short'?key:''};
+    this.key=null; this.renderPanel(true,true); },
+  // --- 매 프레임 ---
+  update(dt){
+    if(this.globe) this.globe.rotation.y+=dt*.6;
+    if(this.sign) this.sign.visible=GS.isStudent()&&this.chiefOnline()&&!this.here();
+    // 방에 있어야 할 사람이 아닌데 방에 있으면 밖으로 (예: 끝난 뒤 남아 있는 학생)
+    if(GS.isStudent()&&this.here()&&!this.isMine()) this.leaveRoom();
+    const show=this.here()||this.isMine(); if(show!==this._shown){ this._shown=show; document.getElementById('croom').classList.toggle('hidden',!show); this.renderPanel(true); }
+    if(this.wasHere&&!this.here()&&this.prevCam!=null){ camDist=this.prevCam; this.prevCam=null; this.wasHere=false; }
+  },
+  // --- 방 안 패널 (모달이 아니라 화면 아래에 붙어 있어서 방이 계속 보여요) ---
+  renderPanel(force,skipCapture){
+    const el=document.getElementById('croom'); if(!el) return;
+    if(!(this.here()||this.isMine())){ if(el.innerHTML) el.innerHTML=''; this._html=''; return; }
+    if(FB.isAdmin&&!skipCapture) crCapture(); // 적던 글이 날아가지 않게 먼저 담아 둬요
+    const html=FB.isAdmin?this.teacherHTML():this.studentHTML();
+    if(!force&&html===this._html) return;
+    const focus=document.activeElement?.id, typed=document.getElementById('cr-in')?.value;
+    el.innerHTML=html; this._html=html;
+    const inEl=document.getElementById('cr-in'); if(inEl&&typed) inEl.value=typed;
+    const f=focus&&document.getElementById(focus); if(f){ f.focus(); if(f.setSelectionRange&&typeof f.value==='string') try{ f.setSelectionRange(f.value.length,f.value.length); }catch(e){} }
+  },
+  studentHTML(){
+    const q=this.q&&this.q.sid===this.state?.sid?this.q:null, a=this.curA(), m=this.curMark(), pend=this.pending(), ok=this.markedOk();
+    let h=`<div class="cr-head"><b>👑 촌장님과 1:1 퀴즈</b><span>⭕ ${this.correct}개</span></div>`;
+    if(!this.isMine()) return h+'<p class="p-sub">1:1 퀴즈가 끝났어요.</p><button class="btn" data-cr="out">🏘️ 마을로 나가기</button>';
+    if(!q) h+='<p class="cr-q wait">촌장님이 문제를 준비하고 있어요… ✏️</p>';
+    else{
+      h+=`<p class="cr-q"><small>문제 ${q.n}</small>${esc(q.text)}</p>`;
+      if(ok) h+=`<p class="result ok">⭕ 정답이에요! ${rewardText(q.reward||{})}<br><small>촌장님이 다음 문제를 준비하고 있어요.</small></p>`;
+      else if(pend) h+=`<p class="result">🤔 촌장님이 채점하고 있어요… <small>(내 답: ${esc(a.text)})</small></p>`;
+      else{
+        if(m&&!m.ok) h+=`<p class="result no">❌ 아쉬워요! 다시 생각해 볼까요? <small>(내 답: ${esc(a?.text||'')})</small></p>`;
+        h+=q.type==='choice'?`<div class="choices">${(q.options||[]).map((o,i)=>`<button class="wtile" data-cr="opt" data-i="${i}">${esc(o)}</button>`).join('')}</div>`
+          :`<div class="cr-row"><input id="cr-in" maxlength="${CR.ansMax}" autocomplete="off" placeholder="여기에 답을 적어요"><button class="btn gem" data-cr="send-a">보내기</button></div>`;
+        if(q.hint) h+=`<p class="hint">💡 힌트: ${esc(q.hint)}</p>`;
+      }
+    }
+    return h+'<div class="cr-row end"><button class="btn sm" data-cr="leave">🚪 나가기</button></div>';
+  },
+  teacherHTML(){
+    const s=this.state, act=this.active(), q=this.q&&this.q.sid===s?.sid?this.q:null, a=this.curA(), m=this.curMark(), pend=this.pending(), auto=this.autoCheck();
+    const waitN=this.queueList().length, online=act&&!!Multi.raw?.[s.student];
+    let h=`<div class="cr-head"><b>👑 1:1 퀴즈 ${act?`— ${esc(realName(s.student))} <small>(${esc(s.name||'')})</small>`:''}</b><span>${act?`⭕ ${this.correct} / ${this.asked}문제`:''}</span></div>`;
+    if(!act){ return h+`<p class="p-sub">지금은 방이 비어 있어요. ${waitN?`기다리는 학생이 <b>${waitN}명</b> 있어요.`:'기다리는 학생이 없어요.'}</p>
+      <div class="cr-row">${waitN?`<button class="btn gem" data-cr="next">🙋 다음 학생 맞이하기</button>`:''}<button class="btn" data-cr="exit">🏘️ 마을로 나가기</button></div>`; }
+    if(!online) h+='<p class="result no">📡 학생의 연결이 끊긴 것 같아요. 잠시 기다리거나 끝내기를 눌러 주세요.</p>';
+    if(this.log.length){ const okN=this.log.filter(x=>x.ok).length; h+=`<p class="hint">📒 이 학생의 지난 1:1 기록: ${this.log.length}문제 중 ⭕ ${okN}개 · 최근: ${this.log.slice(0,3).map(x=>`${x.ok?'⭕':'❌'} ${esc(String(x.q).slice(0,14))}`).join(' / ')}</p>`; }
+    if(q){
+      h+=`<div class="cr-box"><p class="cr-q"><small>보낸 문제 ${q.n}</small>${esc(q.text)}${q.type==='choice'?`<br><small>보기: ${(q.options||[]).map(esc).join(' · ')}</small>`:''}</p>`;
+      if(a) h+=`<p class="cr-ans">학생 답: <b>${esc(a.text)}</b>${auto===null?'':auto?' <span class="tag ok">자동 채점: 맞아요</span>':' <span class="tag no">자동 채점: 틀려요</span>'}</p>`;
+      else h+='<p class="hint">학생이 답을 쓰고 있어요…</p>';
+      if(pend) h+=`<div class="cr-row"><button class="btn leaf ${auto===true?'pulse':''}" data-cr="ok">⭕ 정답!</button><button class="btn berry ${auto===false?'pulse':''}" data-cr="no">❌ 다시 해 볼까?</button></div>`;
+      else if(m) h+=`<p class="result ${m.ok?'ok':'no'}">${m.ok?'⭕ 정답 처리했어요. 다음 문제를 내 주세요!':'❌ 다시 풀어 보라고 했어요. 학생의 새 답을 기다려요.'}</p>`;
+      h+='</div>';
+    }
+    const f=this.form, bank=ChiefQuiz.list();
+    h+=`<details class="cr-form" open><summary>${q?'✏️ 다음 문제 내기':'✏️ 첫 문제 내기'}</summary>
+      ${bank.length?`<div class="cr-row"><select id="cr-bank"><option value="">📚 문제함에서 불러오기 (${bank.length}개)</option>${bank.map(([id,Q])=>`<option value="${id}" ${f.bank===id?'selected':''}>${esc(Q.q.slice(0,30))}</option>`).join('')}</select></div>`:''}
+      <textarea id="cr-text" rows="2" maxlength="${CR.qMax}" placeholder="예: '사과'를 영어로 써 볼까요?">${esc(f.text)}</textarea>
+      <div class="cr-row"><select id="cr-type"><option value="short" ${f.type!=='choice'?'selected':''}>✍️ 직접 쓰기</option><option value="choice" ${f.type==='choice'?'selected':''}>🔘 보기 고르기</option></select>
+        <input id="cr-answer" maxlength="${CR.ansMax*2}" placeholder="정답 (선택 · 자동 채점 도움)" value="${esc(f.answer)}" style="${f.type==='choice'?'display:none':''}"></div>
+      <div id="cr-opts" style="${f.type==='choice'?'':'display:none'}">${[0,1,2,3].map(i=>`<label class="cr-opt"><input type="radio" name="cr-correct" value="${i}" ${+f.correct===i?'checked':''}><input id="cr-o${i}" maxlength="${CR.optMax}" value="${esc(f.options[i]||'')}" placeholder="보기 ${i+1}${i>=2?' (선택)':''}"></label>`).join('')}<small>● 정답 보기를 골라 두면 자동 채점을 도와줘요</small></div>
+      <div class="cr-row"><input id="cr-hint" maxlength="${CR.hintMax}" placeholder="힌트 (선택)" value="${esc(f.hint)}">
+        <label class="cr-mini">🪙<input id="cr-coins" type="number" min="0" max="${CR.coinMax}" value="${esc(f.coins)}"></label><label class="cr-mini">✨<input id="cr-exp" type="number" min="0" max="${CR.expMax}" value="${esc(f.exp)}"></label></div>
+      <div class="cr-row"><label class="cr-mini"><input type="checkbox" id="cr-save" ${f.save?'checked':''}> 문제함에도 저장</label><button class="btn gem" data-cr="send-q">📤 문제 보내기</button></div>
+    </details>
+    <div class="cr-row end"><button class="btn sm" data-cr="next" ${waitN?'':'disabled'}>🙋 다음 학생 (대기 ${waitN}명)</button><button class="btn berry sm" data-cr="end">✅ 끝내기</button></div>`;
     return h;
   }
-  const list=ChiefQuiz.list();
-  h+=list.length?'<div class="recs">'+list.map(([id,Q2],i)=>{ const s=ChiefQuiz.st(id);
-    const tag=!GS.isStudent()?'👀 미리 보기':s.ok?'✅ 맞혔어요':s.tries?`🔁 다시 도전 (${s.tries}번 시도)`:'🆕 아직 안 풀었어요';
-    return `<div class="rec"><span class="e">${s.ok?'🏅':'❓'}</span><div><b>${i+1}. ${esc(Q2.q.length>40?Q2.q.slice(0,40)+'…':Q2.q)}</b><p>${tag} · ${Q2.type==='choice'?'고르기':'직접 쓰기'} · ${rewardText(Q2.reward||{})}</p></div>
-      <button class="btn ${s.ok?'':'gem'} sm" data-act="cq-sel" data-id="${id}">${s.ok?'다시 보기':'풀기'}</button></div>`; }).join('')+'</div>'
-    :'<p class="empty">아직 촌장님이 낸 퀴즈가 없어요. 조금만 기다려 주세요!</p>';
-  if(GS.isStudent()) h+='<div style="margin-top:14px"><button class="btn sm" data-act="cq-board">📜 의뢰 게시판 보기</button></div>';
-  else h+='<p class="hint">선생님은 여기서 학생 화면을 미리 볼 수 있어요. 문제 만들기는 👑 집무실 → ❓ 촌장님 퀴즈 탭에서 해요.</p>';
-  return h;
+};
+function crCapture(){ const g=id=>document.getElementById(id); if(!g('cr-text')) return; const f=ChiefRoom.form;
+  f.text=g('cr-text').value; f.type=g('cr-type').value; f.answer=g('cr-answer').value; f.hint=g('cr-hint').value; f.coins=g('cr-coins').value; f.exp=g('cr-exp').value;
+  f.options=[0,1,2,3].map(i=>g('cr-o'+i).value); f.correct=+(document.querySelector('input[name="cr-correct"]:checked')?.value??0); f.save=g('cr-save').checked; f.bank=g('cr-bank')?.value||f.bank; }
+Object.assign(UI,{
+  croomHud(){
+    const el=document.getElementById('croom-hud'); if(!el) return;
+    const waitN=ChiefRoom.queueList().length; let html='';
+    if(FB.isAdmin&&!ChiefRoom.here()&&(waitN||ChiefRoom.active()))
+      html=ChiefRoom.active()?`<span>👑 1:1 퀴즈 진행 중 · 대기 ${waitN}명</span><button class="btn gem sm" data-crh="go">방으로 가기</button>`
+        :`<span>🙋 1:1 퀴즈 대기 ${waitN}명</span><button class="btn gem sm" data-crh="accept">맞이하기</button>`;
+    else if(GS.isStudent()&&ChiefRoom.myQueued&&!ChiefRoom.isMine()){ const pos2=ChiefRoom.queueList().findIndex(([u])=>u===GS.me.uid)+1;
+      html=`<span>🙋 1:1 퀴즈 대기 ${pos2}번째</span><button class="btn sm" data-crh="cancel">취소</button>`; }
+    el.classList.toggle('hidden',!html); if(html!==this._crh){ el.innerHTML=html; this._crh=html; }
+  }
+});
+document.getElementById('croom-hud').addEventListener('pointerdown',e=>{ const t=e.target.closest('[data-crh]'); if(!t) return; e.preventDefault();
+  const k=t.dataset.crh; if(k==='accept') ChiefRoom.accept(); else if(k==='cancel') ChiefRoom.cancel(); else if(k==='go') ChiefRoom.enter(CR.teacherSeat); });
+const croomEl=document.getElementById('croom');
+croomEl.addEventListener('click',e=>{ const t=e.target.closest('[data-cr]'); if(!t) return; const k=t.dataset.cr;
+  if(k==='opt'){ const q=ChiefRoom.q; if(q) ChiefRoom.answer(q.options[+t.dataset.i]); }
+  else if(k==='send-a') ChiefRoom.answer(document.getElementById('cr-in')?.value);
+  else if(k==='leave') ChiefRoom.studentLeave();
+  else if(k==='out') ChiefRoom.leaveRoom();
+  else if(k==='send-q') ChiefRoom.send();
+  else if(k==='ok') ChiefRoom.judge(true);
+  else if(k==='no') ChiefRoom.judge(false);
+  else if(k==='next'){ if(ChiefRoom.active()) ChiefRoom.end(); setTimeout(()=>ChiefRoom.accept(),300); }
+  else if(k==='end'){ if(confirm('이 학생과의 1:1 퀴즈를 끝낼까요?')) ChiefRoom.end(); }
+  else if(k==='exit') ChiefRoom.chiefExit(); });
+croomEl.addEventListener('change',e=>{
+  if(e.target.id==='cr-type'){ const c=e.target.value==='choice'; document.getElementById('cr-opts').style.display=c?'':'none'; document.getElementById('cr-answer').style.display=c?'none':''; }
+  if(e.target.id==='cr-bank'&&e.target.value){ crCapture(); ChiefRoom.loadBank(e.target.value); } });
+croomEl.addEventListener('keydown',e=>{ if(e.key!=='Enter') return;
+  if(e.target.id==='cr-in'){ e.preventDefault(); ChiefRoom.answer(e.target.value); }
+  else if(e.target.id==='cr-text'&&!e.shiftKey){ e.preventDefault(); ChiefRoom.send(); } });
+
+// --- 촌장님 집을 눌렀을 때 (학생) ---
+function renderChiefRoomEntry(){
+  let h=head('👑 촌장님 집','촌장님과 둘이서만 1:1 영어 퀴즈를 할 수 있어요. 촌장님이 직접 문제를 내 주세요!');
+  const R=ChiefRoom, online=R.chiefOnline(), waitN=R.queueList().length, myPos=R.queueList().findIndex(([u])=>u===GS.me.uid)+1;
+  if(R.isMine()) return h+'<p class="p-sub">지금 촌장님 방에 있어요!</p>';
+  h+=`<div class="kv"><span>촌장님</span><span>${online?'🟢 마을에 계세요':'💤 지금은 안 계세요'}</span><span>1:1 퀴즈 방</span><span>${R.active()?'🔒 다른 친구와 퀴즈 중':'🟢 비어 있어요'}</span><span>기다리는 친구</span><span>${waitN}명</span></div>`;
+  if(myPos) h+=`<p class="result ok">🙋 신청했어요! 지금 <b>${myPos}번째</b>예요. 촌장님이 부르면 자동으로 방으로 이동해요. 마을에서 놀고 있어도 괜찮아요.</p>
+    <button class="btn" data-act="cr-cancel">신청 취소</button>`;
+  else h+=`<button class="btn gem big" data-act="cr-apply">🙋 1:1 퀴즈 신청하기</button>
+    ${online?'':'<p class="hint">촌장님이 안 계셔도 신청해 둘 수 있어요. 촌장님이 들어오시면 알림이 가요. (게임을 끄면 신청이 취소돼요)</p>'}`;
+  return h+'<div style="margin-top:14px"><button class="btn sm" data-act="cr-board">📜 의뢰 게시판 보기</button></div>';
 }
 
-// --- 선생님 화면: 집무실 ❓ 촌장님 퀴즈 탭 ---
+// --- 선생님 집무실: ❓ 1:1 문제함 탭 (미리 문제를 만들어 둬요) ---
 function renderAdminCQ(){
-  const E=cqf.edit&&ChiefQuiz.all[cqf.edit], D=cqf.draft||(E?{q:E.q,type:E.type,options:[...(E.options||[]),'','','',''].slice(0,4),
-    correct:Math.max(0,(E.options||[]).findIndex(o=>cqNorm(o)===cqNorm(ChiefQuiz.keys[cqf.edit]?.answer))),short:E.type==='short'?(ChiefQuiz.keys[cqf.edit]?.answer||''):'',
-    hint:E.hint||'',coins:E.reward?.coins??10,exp:E.reward?.exp??10,open:!!E.open}:{q:'',type:'choice',options:['','','',''],correct:0,short:'',hint:'',coins:10,exp:10,open:true});
-  const choice=D.type!=='short';
-  let h=`<h3>${cqf.edit?'✏️ 문제 고치기':'➕ 새 문제 내기'}</h3>
+  const E=cqf.edit&&ChiefQuiz.all[cqf.edit], key=cqf.edit&&ChiefQuiz.keys[cqf.edit]?.answer;
+  const D=cqf.draft||(E?{q:E.q,type:E.type,options:[...(E.options||[]),'','','',''].slice(0,4),correct:Math.max(0,(E.options||[]).findIndex(o=>cqNorm(o)===cqNorm(key))),
+    short:E.type==='short'?(key||''):'',hint:E.hint||'',coins:E.reward?.coins??10,exp:E.reward?.exp??10}:{q:'',type:'short',options:['','','',''],correct:0,short:'',hint:'',coins:10,exp:10});
+  const choice=D.type==='choice', waitN=ChiefRoom.queueList().length;
+  let h=`<div class="quest today"><span class="q-title">👑 1:1 퀴즈 사용법</span><p class="q-note">학생이 광장의 촌장님 집을 누르면 1:1 퀴즈를 신청해요. 선생님 화면 위쪽에 <b>🙋 맞이하기</b>가 뜨면 누르세요.
+    두 사람만 촌장님 방으로 이동하고, 방 아래쪽 칸에서 문제를 직접 써서 보내면 돼요. 여기서는 자주 쓸 문제를 미리 만들어 둘 수 있어요.</p>
+    <div class="cr-row">${waitN?`<button class="btn gem sm" data-act="cr-accept">🙋 지금 대기 ${waitN}명 — 맞이하기</button>`:'<span class="hint">지금 기다리는 학생이 없어요.</span>'} <button class="btn sm" data-act="cr-go">🚪 촌장님 방으로 가기</button></div></div>
+    <h3>${cqf.edit?'✏️ 문제 고치기':'➕ 문제함에 넣기'}</h3>
     <div class="form">
-      <label class="wide">문제 (${CQ.qMax}자까지) <input id="cq-q" maxlength="${CQ.qMax}" value="${esc(D.q)}" placeholder="예: '사과'를 영어로 뭐라고 할까요?"></label>
-      <label>문제 유형 <select id="cq-type"><option value="choice" ${choice?'selected':''}>보기 고르기(객관식)</option><option value="short" ${choice?'':'selected'}>직접 쓰기(주관식)</option></select></label>
-      <div class="wide" id="cq-choice-box" style="${choice?'':'display:none'}"><b>보기</b> — 정답인 보기의 동그라미를 눌러 주세요 (2~4개)
+      <label class="wide">문제 (${CQ.qMax}자까지) <input id="cq-q" maxlength="${CQ.qMax}" value="${esc(D.q)}" placeholder="예: '사과'를 영어로 써 볼까요?"></label>
+      <label>문제 유형 <select id="cq-type"><option value="short" ${choice?'':'selected'}>✍️ 직접 쓰기</option><option value="choice" ${choice?'selected':''}>🔘 보기 고르기</option></select></label>
+      <div class="wide" id="cq-choice-box" style="${choice?'':'display:none'}"><b>보기</b> — 정답 보기의 동그라미를 눌러요
         ${[0,1,2,3].map(i=>`<label style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="radio" name="cq-correct" value="${i}" ${+D.correct===i?'checked':''} style="width:auto">
           <input id="cq-o${i}" maxlength="${CQ.optMax}" value="${esc(D.options[i]||'')}" placeholder="보기 ${i+1}${i>=2?' (비워도 돼요)':''}"></label>`).join('')}</div>
-      <label class="wide" id="cq-short-box" style="${choice?'display:none':''}">정답 (여러 개 인정하려면 / 로 나눠요) <input id="cq-short" maxlength="${CQ.ansMax*2}" value="${esc(D.short)}" placeholder="예: apple / an apple"></label>
-      <label class="wide">힌트 (선택) <input id="cq-hint" maxlength="${CQ.hintMax}" value="${esc(D.hint)}" placeholder="예: 빨갛고 아삭한 과일이에요"></label>
+      <label class="wide" id="cq-short-box" style="${choice?'display:none':''}">정답 (선택 · 여러 개면 / 로 나눠요) <input id="cq-short" maxlength="${CQ.ansMax*2}" value="${esc(D.short)}" placeholder="예: apple / an apple"></label>
+      <label class="wide">힌트 (선택) <input id="cq-hint" maxlength="${CQ.hintMax}" value="${esc(D.hint)}"></label>
       <label>보상 코인 <input id="cq-coins" type="number" min="0" max="${CQ.coinMax}" value="${esc(D.coins)}"></label>
       <label>보상 경험치 <input id="cq-exp" type="number" min="0" max="${CQ.expMax}" value="${esc(D.exp)}"></label>
-      <label class="wide"><input type="checkbox" id="cq-open" ${D.open?'checked':''} style="width:auto"> 저장하면 바로 학생들에게 공개하기</label>
-      <div><button class="btn gem" data-act="cq-save">${cqf.edit?'💾 고친 내용 저장':'📢 문제 내기'}</button> ${cqf.edit?'<button class="btn" data-act="cq-cancel">취소</button>':''}</div>
-    </div>
-    <p class="hint">학생은 마을 광장의 👑 촌장님 집을 눌러 문제를 풀어요. 대문자·소문자, 띄어쓰기 여러 칸, 끝의 마침표는 채점할 때 무시해요.</p>`;
-  const list=ChiefQuiz.list(true);
-  h+=`<h3>📋 낸 문제 ${list.length}개</h3>`+(list.map(([id,Q])=>{ const S=ChiefQuiz.stats(id), key=ChiefQuiz.keys[id]?.answer, op=cqf.open[id];
-    return `<div class="quest ${Q.open?'today':''}"><div class="q-head"><span class="q-title">${esc(Q.q)}</span><span class="q-date">${Q.open?'📢 공개 중':'🙈 숨김'}</span></div>
-      <p class="q-note">${Q.type==='choice'?`보기: ${(Q.options||[]).map(o=>cqNorm(o)===cqNorm(key)?`<b>✔ ${esc(o)}</b>`:esc(o)).join(' · ')}`:`정답: <b>${esc(key||'?')}</b>`}
-        ${Q.hint?`<br>힌트: ${esc(Q.hint)}`:''}<br>보상 ${rewardText(Q.reward||{})} · 푼 학생 ${S.n}명 · 맞힌 학생 ${S.ok}명 · 첫 시도 정답률 ${S.rate===null?'-':S.rate+'%'}</p>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn ${Q.open?'':'leaf'} sm" data-act="cq-open" data-id="${id}" data-v="${Q.open?0:1}">${Q.open?'🙈 숨기기':'📢 공개하기'}</button>
-        <button class="btn sm" data-act="cq-edit" data-id="${id}">✏️ 고치기</button>
-        <button class="btn sm" data-act="cq-try" data-id="${id}">🧪 미리 풀어 보기</button>
-        <button class="btn sm" data-act="cq-res" data-id="${id}">${op?'결과 접기':'📊 학생별 결과'}</button>
-        <button class="btn berry sm" data-act="cq-del" data-id="${id}">🗑</button></div>
-      ${op?(S.rows.length?`<div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th>학생</th><th>결과</th><th>도전</th><th>마지막으로 적은 답</th></tr></thead><tbody>${
-        S.rows.sort((a,b)=>nameSort(realName(a[0]),realName(b[0]))).map(([u,r])=>`<tr><td>${esc(realName(u))}<br><small>${esc(r.name||'')}</small></td><td>${r.ok?(r.firstOk?'⭕ 한 번에':'⭕ 다시 풀어서'):'❌ 아직'}</td><td>${r.tries||0}번</td><td>${esc(r.last||'')}</td></tr>`).join('')}</tbody></table></div>`
-        :'<p class="empty">아직 푼 학생이 없어요.</p>'):''}</div>`; }).join('')||'<p class="empty">아직 낸 문제가 없어요. 위에서 첫 문제를 내 보세요!</p>');
+      <div><button class="btn gem" data-act="cq-save">${cqf.edit?'💾 고친 내용 저장':'💾 문제함에 넣기'}</button> ${cqf.edit?'<button class="btn" data-act="cq-cancel">취소</button>':''}</div>
+    </div>`;
+  const list=ChiefQuiz.list();
+  h+=`<h3>📚 문제함 ${list.length}개</h3>`+(list.map(([id,Q])=>{ const k=ChiefQuiz.keys[id]?.answer;
+    return `<div class="quest"><div class="q-head"><span class="q-title">${esc(Q.q)}</span><span class="q-date">${Q.type==='choice'?'🔘 보기 고르기':'✍️ 직접 쓰기'}</span></div>
+      <p class="q-note">${Q.type==='choice'?`보기: ${(Q.options||[]).map(o=>cqNorm(o)===cqNorm(k)?`<b>✔ ${esc(o)}</b>`:esc(o)).join(' · ')}`:`정답: <b>${esc(k||'(촌장님이 직접 채점)')}</b>`}${Q.hint?`<br>힌트: ${esc(Q.hint)}`:''}<br>보상 ${rewardText(Q.reward||{})}</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="cq-edit" data-id="${id}">✏️ 고치기</button><button class="btn berry sm" data-act="cq-del" data-id="${id}">🗑</button></div></div>`; }).join('')
+    ||'<p class="empty">아직 넣어 둔 문제가 없어요. 1:1 방에서 바로 써서 보내도 돼요!</p>');
   return h;
 }
 
-// --- 클릭 처리 (촌장님 퀴즈) ---
+// --- 클릭 처리 ---
 panelEl.addEventListener('click',e=>{
   const t=e.target.closest('[data-act]'); if(!t) return; const d=t.dataset;
   switch(d.act){
-    case 'cq-sel': cqs.sel=d.id; cqs.msg=''; cqs.hint=false; UI.render(); setTimeout(()=>document.getElementById('cq-in')?.focus(),50); break;
-    case 'cq-back': cqs.sel=null; cqs.msg=''; cqs.hint=false; UI.render(); break;
-    case 'cq-hint': cqs.hint=true; UI.render(); break;
-    case 'cq-opt': { const Q=ChiefQuiz.all[cqs.sel]; if(Q) ChiefQuiz.answer(cqs.sel,Q.options[+d.i]); break; }
-    case 'cq-submit': ChiefQuiz.answer(cqs.sel,document.getElementById('cq-in')?.value); break;
-    case 'cq-board': UI.open('board'); break;
+    case 'cr-apply': ChiefRoom.apply().then(()=>UI.render()); break;
+    case 'cr-cancel': ChiefRoom.cancel(); break;
+    case 'cr-board': UI.open('board'); break;
+    case 'cr-accept': ChiefRoom.accept(); break;
+    case 'cr-go': UI.close(); ChiefRoom.enter(CR.teacherSeat); break;
     case 'cq-save': cqCapture(); ChiefQuiz.save({...cqf.draft,id:cqf.edit}); break;
     case 'cq-cancel': cqf.edit=null; cqf.draft=null; UI.render(); break;
     case 'cq-edit': cqf.edit=d.id; cqf.draft=null; UI.render(); panelEl.scrollTop=0; break;
-    case 'cq-open': ChiefQuiz.setOpen(d.id,d.v==='1'); break;
     case 'cq-del': ChiefQuiz.remove(d.id); break;
-    case 'cq-res': cqf.open[d.id]=!cqf.open[d.id]; cqCapture(); UI.render(); break;
-    case 'cq-try': cqs.sel=d.id; cqs.msg=''; cqs.hint=false; UI.open('chiefquiz'); break;
   }
 });
-panelEl.addEventListener('change',e=>{ if(e.target.id==='cq-type'){ const c=e.target.value!=='short';
+panelEl.addEventListener('change',e=>{ if(e.target.id==='cq-type'){ const c=e.target.value==='choice';
   document.getElementById('cq-choice-box').style.display=c?'':'none'; document.getElementById('cq-short-box').style.display=c?'none':''; } });
-panelEl.addEventListener('keydown',e=>{ if(e.target.id==='cq-in'&&e.key==='Enter'){ e.preventDefault(); ChiefQuiz.answer(cqs.sel,e.target.value); } });
 </script>
 </body>
 </html>
