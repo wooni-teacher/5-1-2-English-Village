@@ -57,6 +57,10 @@ input,select{user-select:text;-webkit-user-select:text;font-family:var(--kr)}
 .swatches{display:flex;gap:10px;justify-content:center;margin:8px 0 16px;flex-wrap:wrap}
 .swatches button{width:36px;height:36px;border-radius:50%;border:3px solid var(--slate-d);cursor:pointer}
 .swatches button.on{outline:4px solid #fff;outline-offset:2px}
+.hair-styles{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 4px}
+.hair-styles button{padding:8px 14px;border-radius:14px;border:2px solid var(--slate-d);background:var(--slate-l);color:var(--ink);font-family:'Jua',sans-serif;font-size:14px;cursor:pointer}
+.hair-styles button.on{background:var(--gem);color:#1a1a1a;border-color:var(--gem)}
+.swatches.sm button{width:28px;height:28px}
 .big{font-size:22px;padding:11px 20px;width:100%}
 .linkbtn{background:none;border:none;color:var(--ink-soft);font-family:var(--kr);font-size:16px;margin-top:12px;cursor:pointer;text-decoration:underline}
 #login-msg{min-height:20px;margin-top:10px;font-size:14px;color:var(--ink-soft);line-height:1.45}
@@ -401,6 +405,9 @@ body:not(.role-chief) .chief-only{display:none!important}
       <p class="small-note">처음 들어오면 적은 비밀 숫자로 내 계정이 만들어져요. 다음부터는 어느 기기에서든 같은 이름과 숫자로 들어와요.</p>
       <label>내 캐릭터 색깔</label>
       <div class="swatches" id="swatches"></div>
+      <label>머리 모양</label>
+      <div class="hair-styles" id="hair-styles"></div>
+      <div class="swatches sm" id="hair-colors"></div>
       <button class="btn gem big" id="btn-enter">마을로 들어가기</button>
     </div>
     <div id="chief-form" class="hidden">
@@ -1251,7 +1258,7 @@ function buildPlaza(){
   const [hx,hz]=at(30,10.5); building(hx,hz,6.5,5,3.8,0xfff1d6,0xd94f4f,0,0);
   box(.12,3.2,.12,0x888888,hx,5.6,hz); box(1.2,.8,.05,0xffc93c,hx+.62,6.7,hz);
   const hl=textSprite('👑 촌장님 집',{font:'56px Jua',h:.9}); hl.position.set(hx,7.9,hz); scene.add(hl);
-  addStation('chief',hx,hz,5.6,()=>GS.isStudent()?'촌장님께 의뢰 확인받기':'촌장님 집무실 열기','✋',()=>UI.open(GS.isStudent()?'board':'admin'));
+  addStation('chief',hx,hz,5.6,()=>GS.isStudent()?'👑 촌장님 퀴즈방 들어가기':'촌장님 집무실 열기','✋',()=>{ if(GS.isStudent()){ cqs.sel=null; cqs.msg=''; cqs.hint=false; UI.open('chiefquiz'); } else UI.open('admin'); }); // [추가] 촌장님 퀴즈방
   const [bx,bz]=at(330,8.5); const bg=new THREE.Group(); bg.position.set(bx,0,bz); scene.add(bg);
   box(.2,2.6,.2,0x8a5a36,-1.3,1.3,0,bg); box(.2,2.6,.2,0x8a5a36,1.3,1.3,0,bg); box(3,1.7,.15,0xa0703f,0,1.9,0,bg);
   [[-.8,2.2],[.2,2.3],[.9,1.7],[-.4,1.5]].forEach(([u,v])=>box(.7,.55,.04,0xfff8e6,u,v,.1,bg)); bg.lookAt(0,0,0); collide(bx,bz,1.4);
@@ -1330,21 +1337,46 @@ function walkable(x,z){ return Math.hypot(x,z)<73 || Math.hypot(x-DUN.x,z-DUN.z)
    ║ §6 AVATAR & EFFECTS                                            ║
    ╚══════════════════════════════════════════════════════════════╝ */
 const pantsM=mat(0x34495e), skinM=mat(0xffd166), blackM=mat(0x1b1b1b);
-function makeAvatar(color,name,chief=false){
+// [수정] 머리 모양 5종 — 스타일 문자열만 맞으면 되고, 색은 자유롭게 골라요.
+function makeHairMesh(style,color){
+  if(!style||style==='none') return null;
+  const g=new THREE.Group(); const m=new THREE.MeshLambertMaterial({color});
+  const b=(w,h,d,x,y,z)=>{ const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); o.position.set(x,y,z); o.castShadow=true; g.add(o); return o; };
+  if(style==='short'){ b(.86,.3,.86,0,.02,0); b(.88,.16,.16,0,-.1,.37); }
+  else if(style==='pony'){
+    b(.86,.22,.86,0,.05,0);
+    const tail=new THREE.Mesh(new THREE.CylinderGeometry(.08,.13,.7,8),m); tail.position.set(0,-.28,-.46); tail.rotation.x=.4; tail.castShadow=true; g.add(tail);
+    const tie=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,6,12),new THREE.MeshLambertMaterial({color:0xffffff})); tie.position.set(0,.06,-.4); tie.rotation.x=Math.PI/2; g.add(tie);
+  } else if(style==='curly'){
+    [[0,.14,0,.34],[-.25,.04,.13,.26],[.25,.04,.13,.26],[0,0,-.26,.28],[-.16,-.02,-.18,.2],[.16,-.02,-.18,.2]].forEach(([x,y,z,r])=>{
+      const s=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0),m); s.position.set(x,y,z); s.castShadow=true; g.add(s); });
+  } else if(style==='spiky'){
+    b(.82,.12,.82,0,-.04,0);
+    [[-.24,.03,0],[0,.2,-.05],[.24,.03,0],[-.11,.15,-.28],[.13,.13,-.26]].forEach(([x,y,z])=>{
+      const sp=new THREE.Mesh(new THREE.ConeGeometry(.11,.34,5),m); sp.position.set(x,y+.18,z); sp.rotation.z=x*.7; sp.castShadow=true; g.add(sp); });
+  }
+  g.position.y=2.72; return g;
+}
+function makeAvatar(color,name,chief=false,hair=null){
   const g=new THREE.Group(); const bodyM=new THREE.MeshLambertMaterial({color});
   const limb=(w,h,d,m,x,y)=>{ const p=new THREE.Group(); p.position.set(x,y,0); const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); o.position.y=-h/2; o.castShadow=true; p.add(o); g.add(p); return p; };
   const legL=limb(.45,.9,.45,pantsM,-.25,.9), legR=limb(.45,.9,.45,pantsM,.25,.9);
+  const shoeM=new THREE.MeshLambertMaterial({color:0x2b2320});
+  [legL,legR].forEach(leg=>{ const s=new THREE.Mesh(new THREE.BoxGeometry(.47,.22,.5),shoeM); s.position.set(0,-.86,.02); s.castShadow=true; leg.add(s); });
   const torso=new THREE.Mesh(new THREE.BoxGeometry(1.05,1,.55),bodyM); torso.position.y=1.4; torso.castShadow=true; g.add(torso);
   const armL=limb(.34,.95,.34,bodyM,-.7,1.88), armR=limb(.34,.95,.34,bodyM,.7,1.88);
   const head=new THREE.Mesh(new THREE.BoxGeometry(.8,.8,.8),skinM); head.position.y=2.3; head.castShadow=true; g.add(head);
-  [-.17,.17].forEach(x=>{ const e=new THREE.Mesh(new THREE.BoxGeometry(.1,.15,.02),blackM); e.position.set(x,2.38,.41); g.add(e); });
-  const mo=new THREE.Mesh(new THREE.BoxGeometry(.26,.05,.02),blackM); mo.position.set(0,2.17,.41); g.add(mo);
-  let top=2.9;
+  [-.17,.17].forEach(x=>{ const e=new THREE.Mesh(new THREE.BoxGeometry(.12,.16,.02),blackM); e.position.set(x,2.39,.41); g.add(e);
+    const hl=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,.01),new THREE.MeshBasicMaterial({color:0xffffff})); hl.position.set(x-.03,2.44,.425); g.add(hl); });
+  [-.28,.28].forEach(x=>{ const c=new THREE.Mesh(new THREE.CircleGeometry(.09,10),new THREE.MeshBasicMaterial({color:0xff9fb0,transparent:true,opacity:.55})); c.position.set(x,2.21,.405); g.add(c); });
+  const mo=new THREE.Mesh(new THREE.TorusGeometry(.11,.018,5,10,140*Math.PI/180),blackM); mo.rotation.z=200*Math.PI/180; mo.position.set(0,2.16,.41); g.add(mo);
+  let top=2.9, hairObj=null;
   if(chief){ const cm=new THREE.MeshLambertMaterial({color:0xffc93c,emissive:0x664400});
     const cr=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.28,8),cm); cr.position.y=2.84; g.add(cr);
     for(let q=0;q<4;q++){ const sp=new THREE.Mesh(new THREE.ConeGeometry(.1,.3,4),cm); const a=q*Math.PI/2; sp.position.set(Math.sin(a)*.34,3.12,Math.cos(a)*.34); g.add(sp); } top=3.3; }
+  else if(hair){ hairObj=makeHairMesh(hair.style,hair.color); if(hairObj) g.add(hairObj); }
   const ns=textSprite(chief?'👑 '+name:name,{font:'48px Jua',h:.5,bg:chief?'rgba(201,139,0,.92)':'rgba(15,36,48,.8)'}); ns.position.y=top+.2; g.add(ns);
-  g.userData={legL,legR,armL,armR,phase:0,swing:0,top,bubble:null,bubbleUntil:0,nameSprite:ns};
+  g.userData={legL,legR,armL,armR,phase:0,swing:0,idle:Math.random()*6,top,bubble:null,bubbleUntil:0,nameSprite:ns,hairObj,hatId:null};
   return g;
 }
 function disposeAvatar(av){ av.traverse(o=>{ if(o.isSprite) disposeSprite(o); else if(o.isMesh){ o.geometry.dispose(); } }); }
@@ -1356,6 +1388,7 @@ function animAvatar(av,speed,dt){
   const u=av.userData, k=Math.min(speed/6.5,1); u.phase+=dt*speed*1.7; const s=Math.sin(u.phase)*.8*k;
   u.legL.rotation.x=s; u.legR.rotation.x=-s; u.armL.rotation.x=-s*.8;
   if(u.swing>0){ u.swing-=dt; u.armR.rotation.x=-2.4*Math.sin(Math.max(u.swing,0)/.3*Math.PI); } else u.armR.rotation.x=s*.8;
+  u.idle=(u.idle||0)+dt; av.position.y+=Math.sin(u.idle*1.6)*.02*(1-k); // [수정] 가만히 있으면 살짝 숨쉬듯 움직여요
   if(u.bubble&&performance.now()>u.bubbleUntil){ av.remove(u.bubble); disposeSprite(u.bubble); u.bubble=null; }
 }
 const parts=[]; const partGeo=new THREE.BoxGeometry(.18,.18,.18);
@@ -1447,7 +1480,7 @@ const Multi={ remotes:{}, raw:{}, lastSay:null, lastEmo:null, lastSent:0, lastKe
     const k=`${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)},${facing.toFixed(1)}`;
     if(!force&&(now-this.lastSent<LIMITS.presenceMs||(k===this.lastKey&&now-this.lastSent<LIMITS.presenceIdleMs))) return;
     this.lastSent=now; this.lastKey=k;
-    FB.set('players/'+GS.me.uid,{name:GS.me.name,color:GS.me.color,role:GS.me.role,x:+pos.x.toFixed(2),y:+pos.y.toFixed(2),z:+pos.z.toFixed(2),ry:+facing.toFixed(2),t:FB.now(),say:this.lastSay,hat:GS.inv?.equipped?.hat||null,pet:GS.inv?.equipped?.pet||null,
+    FB.set('players/'+GS.me.uid,{name:GS.me.name,color:GS.me.color,role:GS.me.role,hair:GS.me.hair||null,x:+pos.x.toFixed(2),y:+pos.y.toFixed(2),z:+pos.z.toFixed(2),ry:+facing.toFixed(2),t:FB.now(),say:this.lastSay,hat:GS.inv?.equipped?.hat||null,pet:GS.inv?.equipped?.pet||null,
       // [3차] 위치 종류·코스·감정 표현도 함께 보내요
       loc:Social.loc(),m:Maps.mode==='play'?Maps.id:null,emo:this.lastEmo}).catch(()=>{});
   },
@@ -1458,7 +1491,7 @@ const Multi={ remotes:{}, raw:{}, lastSay:null, lastEmo:null, lastSent:0, lastKe
       if(Social.isBlocked(uid)||(p.role!=='chief'&&!Classes.inClass(uid))){ if(this.remotes[uid]){ scene.remove(this.remotes[uid].av); disposeAvatar(this.remotes[uid].av); delete this.remotes[uid]; } continue; }
       let r=this.remotes[uid];
       if(!r){ if(Object.keys(this.remotes).length>=LIMITS.maxRemotes) continue;
-        r=this.remotes[uid]={av:makeAvatar(p.color||'#888',p.name||'?',p.role==='chief'),cur:new THREE.Vector3(p.x,p.y,p.z),ry:p.ry||0,sayT:0,name:p.name,role:p.role}; scene.add(r.av); }
+        r=this.remotes[uid]={av:makeAvatar(p.color||'#888',p.name||'?',p.role==='chief',p.hair||null),cur:new THREE.Vector3(p.x,p.y,p.z),ry:p.ry||0,sayT:0,name:p.name,role:p.role}; scene.add(r.av); }
       r.tx=p.x; r.ty=p.y; r.tz=p.z; r.try=p.ry||0; r.name=p.name; r.role=p.role;
       if(r.role!=='chief') setHat(r.av,p.hat||null); Pets.attachRemote(r,p.pet||null); // [2차]
       r.m=p.m||null; if(p.emo&&p.emo.t!==r.emoT){ r.emoT=p.emo.t; if(Math.abs(FB.now()-p.emo.t)<8000) setBubble(r.av,p.emo.e); } // [3차]
@@ -2235,6 +2268,7 @@ function makeHat(id){
 function setHat(av,id){
   const u=av.userData; if(u.hatId===id) return; if(u.hatObj){ av.remove(u.hatObj); u.hatObj=null; } u.hatId=id||null;
   const h=id?makeHat(id):null; if(h){ av.add(h); u.hatObj=h; }
+  if(u.hairObj) u.hairObj.visible=!id; // [수정] 모자를 쓰면 머리카락은 가려져요
   u.lift=id==='hat_wizard'?.9:id?.3:0; if(u.nameSprite) u.nameSprite.position.y=u.top+.2+u.lift;
 }
 function makePetMesh(id){
@@ -2417,7 +2451,7 @@ const Social={
   setVisit(v){ if(!VISIT_OPTS.some(([k])=>k===v)) return; GS.inv.visit=v; GS.change(); GS.flush(true); toast(`내 섬 방문: ${VISIT_OPTS.find(([k])=>k===v)[1]}`); },
   setNick(n){
     if(!n||n.length>16) return; GS.inv.nick=n; GS.me.name=n; GS.change(); GS.flush(true);
-    const old=player; scene.remove(old); disposeAvatar(old); player=makeAvatar(GS.me.color,n,false); player.position.copy(pos); player.rotation.y=facing; scene.add(player);
+    const old=player; scene.remove(old); disposeAvatar(old); player=makeAvatar(GS.me.color,n,false,GS.me.hair); player.position.copy(pos); player.rotation.y=facing; scene.add(player);
     setHat(player,null); Pets.id=undefined; Equip.apply(); Build.refreshSigns(); toast(`🏷️ 이제 「${esc(n)}」(으)로 불려요!`);
   },
   report(type,target,targetName,reason,extra){
@@ -3528,7 +3562,7 @@ const UI={
       npc:renderNpc,shop:renderShop,craft:renderCraft,attend:renderAttend,
       social:renderSocial,profile:renderProfile,invite:renderInvite,report:renderReport,guestbook:renderGuestbook,raid:renderRaid,raidresult:renderRaidResult,maps:renderMaps,mapresult:renderMapResult, // [3차]
       season:renderSeason,settings:renderSettings,safety:renderSafety, // [4차]
-      mylog:renderMylog,lesson:renderLesson,lessonresult:renderLessonResult}[this.modal]; // [5차] // [2차] npc·shop·craft·attend
+      mylog:renderMylog,lesson:renderLesson,lessonresult:renderLessonResult,chiefquiz:renderChiefQuiz}[this.modal]; // [5차] // [2차] npc·shop·craft·attend
     panelEl.className='panel'+(['battle','dgresult','raid','raidresult'].includes(this.modal)?' dark':''); panelEl.innerHTML=f(); panelEl.scrollTop=st;
   },
   refresh(){ this.hud(); if(!this.modal) return;
@@ -3776,6 +3810,7 @@ function renderHelp(){
     <li><div>🌀 던전 포털에서 영어 문제로 몬스터와 싸워요.<small>연속으로 맞히면 콤보! 희귀 장식이나 펫이 나올지도 몰라요.</small></div></li>
     <li><div>🛒 냥냥 상점에서 사고, 🛠️ 장비 공방에서 곡괭이와 가방을 만들어요.<small>🎒 가방 → 장비 탭에서 장착하고, 펫 탭에서 펫을 데리고 다녀요.</small></div></li>
     <li><div>🏡 내 섬에서 🔨 건축하기로 섬을 꾸며요.<small>단어 연구소는 시간이 지나면 필요한 알파벳을 만들어 줘요.</small></div></li>
+    <li><div>👑 촌장님 집을 누르면 촌장님 퀴즈방이 열려요.<small>선생님이 직접 낸 문제를 풀어요. 처음 맞히면 보상! 집 위에 ❓가 떠 있으면 새 문제가 있다는 뜻이에요.</small></div></li>
     <li><div>🎪 시즌마다 마을이 바뀌어요.<small>봄 꽃 축제·여름 해변·가을 수확·겨울 눈꽃! 활동하면 시즌 점수가 쌓여 보상 트랙을 받아요. 시즌이 끝나도 아이템과 건축물은 그대로예요.</small></div></li>
     <li><div>⚙️ 설정에서 그래픽 품질을 바꿀 수 있어요.<small>휴대전화가 느리면 ‘낮음’으로 바꿔 보세요. 🛡️ 안전 약속도 여기서 볼 수 있어요.</small></div></li>
     <li><div>👥 친구 코드로 친구를 사귀고 파티를 만들어요.<small>친구 섬에 놀러 가서 👍 좋아요와 🎨 칭찬 스티커를 남겨요. 주말엔 광장에 👾 영어 괴물 대왕이 나타나요!</small></div></li>
@@ -3892,7 +3927,7 @@ function adminQuestList(){
     return `<div class="sub-row"><span class="nm">${fmtDate(q.date)}</span><span class="info">${esc(qTitle(q))}, 단어 ${q.nWords}개 문장 ${q.nSentences}개${q.note?'<br>'+esc(q.note):''}</span><span>👑 ${ok} ⏳ ${wait}</span><button class="btn sm" data-act="q-del" data-id="${q.id}">지우기</button></div>`; }).join('');
 }
 function renderAdmin(){
-  const tabs=[['quest','의뢰 내기'],['check','확인 도장'],['daily','날마다 확인표'],['stats','학생 현황'],['event','마을 이벤트'],['dungeon','던전'],['raid','👾 레이드'],['maps','🏁 코스 관리'],['class','🏫 학급'],['lesson','🎓 수업'],['templates','📦 템플릿'],['weekly','📈 주간 리포트'],['season','🎪 시즌'],['studio','🛠️ 콘텐츠 제작'],['analytics','📊 학습 분석'],['trash','🗑 휴지통'],['reports',`🚩 신고${Object.keys(GS.reports||{}).length?' ('+Object.keys(GS.reports).length+')':''}`],['notice','공지'],['account','내 계정']];
+  const tabs=[['quest','의뢰 내기'],['check','확인 도장'],['cquiz','❓ 촌장님 퀴즈'],['daily','날마다 확인표'],['stats','학생 현황'],['event','마을 이벤트'],['dungeon','던전'],['raid','👾 레이드'],['maps','🏁 코스 관리'],['class','🏫 학급'],['lesson','🎓 수업'],['templates','📦 템플릿'],['weekly','📈 주간 리포트'],['season','🎪 시즌'],['studio','🛠️ 콘텐츠 제작'],['analytics','📊 학습 분석'],['trash','🗑 휴지통'],['reports',`🚩 신고${Object.keys(GS.reports||{}).length?' ('+Object.keys(GS.reports).length+')':''}`],['notice','공지'],['account','내 계정']];
   let h=head('👑 촌장님 집무실','')+`<div class="tabs">${tabs.map(([k,t])=>{ const n=k==='check'?pendingSubs().length:0; return `<button class="tab ${adm.tab===k?'on':''}" data-act="adm-tab" data-k="${k}">${t}${n?` (${n})`:''}</button>`; }).join('')}</div>`;
   const students=Object.entries(GS.profiles).sort((a,b)=>nameSort(realName(a[0]),realName(b[0])));
   if(adm.tab==='quest') h+=`<div class="form"><label>날짜 <input type="date" id="q-date" value="${today()}"></label>
@@ -3939,6 +3974,7 @@ function renderAdmin(){
   else if(['raid','maps','reports'].includes(adm.tab)) h+=renderAdmin3(adm.tab); // [3차]
   else if(['season','studio','analytics','trash'].includes(adm.tab)) h+=renderAdmin4(adm.tab); // [4차]
   else if(['class','lesson','templates','weekly'].includes(adm.tab)) h+=renderAdmin5(adm.tab); // [5차]
+  else if(adm.tab==='cquiz') h+=renderAdminCQ(); // [추가] 촌장님 퀴즈
   else h+=`<p class="p-sub">이 계정의 UID예요. 보안 규칙의 english5/admins 에 이 값이 true로 등록되어 있어야 촌장님 권한이 생겨요.</p><p><span class="code">${esc(FB.uid)}</span></p>
       <p class="hint">${FB.mode==='offline'?'지금은 체험 모드예요.':'관리자 확인: 통과'}</p><button class="btn" data-act="logout">로그아웃</button>`;
   return h;
@@ -4016,6 +4052,16 @@ const COLORS=['#ff6b8b','#ff9f43','#ffc93c','#3cc6b4','#4fa3ff','#9b8cff','#2ecc
 let chosenColor=localStorage.getItem('e5_color')||COLORS[0], dbReady=false;
 $('#swatches').innerHTML=COLORS.map(c=>`<button style="background:${c}" data-c="${c}" class="${c===chosenColor?'on':''}" aria-label="색깔 ${c}"></button>`).join('');
 $('#swatches').addEventListener('click',e=>{ const b=e.target.closest('[data-c]'); if(!b) return; chosenColor=b.dataset.c; document.querySelectorAll('#swatches button').forEach(x=>x.classList.toggle('on',x===b)); });
+// [수정] 머리 모양·색깔 고르기 (캐릭터 색깔과 같은 방식으로 이 기기에 저장돼요)
+const HAIR_STYLES=[['short','단발'],['pony','포니테일'],['curly','곱슬머리'],['spiky','스파이크'],['none','안 해요']];
+const HAIR_COLORS=['#2b2320','#6b4226','#a5673f','#f2d27a','#ff6b8b','#3cc6b4','#9b8cff','#f5f5f5'];
+let chosenHairStyle=localStorage.getItem('e5_hairstyle')||'short', chosenHairColor=localStorage.getItem('e5_haircolor')||HAIR_COLORS[0];
+$('#hair-styles').innerHTML=HAIR_STYLES.map(([k,t])=>`<button data-hs="${k}" class="${k===chosenHairStyle?'on':''}">${t}</button>`).join('');
+$('#hair-styles').addEventListener('click',e=>{ const b=e.target.closest('[data-hs]'); if(!b) return; chosenHairStyle=b.dataset.hs;
+  document.querySelectorAll('#hair-styles button').forEach(x=>x.classList.toggle('on',x===b)); $('#hair-colors').classList.toggle('hidden',chosenHairStyle==='none'); });
+$('#hair-colors').innerHTML=HAIR_COLORS.map(c=>`<button style="background:${c}" data-hc="${c}" class="${c===chosenHairColor?'on':''}" aria-label="머리색 ${c}"></button>`).join('');
+$('#hair-colors').addEventListener('click',e=>{ const b=e.target.closest('[data-hc]'); if(!b) return; chosenHairColor=b.dataset.hc; document.querySelectorAll('#hair-colors button').forEach(x=>x.classList.toggle('on',x===b)); });
+if(chosenHairStyle==='none') $('#hair-colors').classList.add('hidden');
 $('#in-name').value=localStorage.getItem('e5_name')||'';
 $('#btn-toggle-chief').addEventListener('click',()=>{ const s=$('#chief-form').classList.toggle('hidden'); $('#student-form').classList.toggle('hidden',!s);
   $('#btn-toggle-chief').textContent=s?'👑 선생님(촌장님)이신가요?':'← 학생으로 들어가기'; });
@@ -4039,7 +4085,7 @@ async function enterStudent(name,pin){
   loginMsg('내 계정을 확인하고 있어요…');
   try{ await FB.loginStudent(name,pin); }
   catch(e){ loginMsg(e.message==='PIN'?'비밀 숫자가 달라요. 처음 정한 4자리 숫자를 적어 주세요. 잊어버렸다면 촌장님께 말씀드려요.':authErr(e),true); return; }
-  GS.me={uid:FB.uid,name,color:chosenColor,role:'student'};
+  GS.me={uid:FB.uid,name,color:chosenColor,role:'student',hair:{style:chosenHairStyle,color:chosenHairColor}};
   try{
     const [inv,prof]=await Promise.all([FB.get('inventory/'+FB.uid),FB.get('profiles/'+FB.uid)]);
     let score=prof?.score||0, data=inv;
@@ -4049,7 +4095,8 @@ async function enterStudent(name,pin){
     GS.inv.realName=name; if(!GS.inv.nick) GS.inv.nick=Social.genNick(hashStr(FB.uid)); GS.me.name=GS.inv.nick; GS.me.realName=name;
     GS._dirty=true; GS.flush(true);
   }catch(e){ console.error(e); loginMsg('기록을 불러오지 못했어요. 보안 규칙을 확인해 주세요.',true); return; }
-  localStorage.setItem('e5_name',name); localStorage.setItem('e5_color',chosenColor); start();
+  localStorage.setItem('e5_name',name); localStorage.setItem('e5_color',chosenColor);
+  localStorage.setItem('e5_hairstyle',chosenHairStyle); localStorage.setItem('e5_haircolor',chosenHairColor); start();
 }
 async function enterChief(email,pw){
   loginMsg('선생님 계정을 확인하고 있어요…');
@@ -4070,7 +4117,7 @@ function subscribeAll(){
 function start(){
   document.body.classList.add(GS.isStudent()?'role-student':'role-chief');
   subscribeAll();
-  player=makeAvatar(GS.me.color,GS.me.name,!GS.isStudent()); scene.add(player); teleport(0,5.5,Math.PI);
+  player=makeAvatar(GS.me.color,GS.me.name,!GS.isStudent(),GS.me.hair); scene.add(player); teleport(0,5.5,Math.PI);
   // [2차] 성장·퀘스트·출석
   Progress.init(); Announce.init();
   if(GS.isStudent()){ Tutorial.ensure(); Daily.ensure(); Rewards.prune(); Attendance.pending=true; GS.inv.title=Growth.title(GS.inv.level); }
@@ -4081,6 +4128,7 @@ function start(){
   Studio.init(); Season.init(); TQuests.init(); Safety.init();
   // [5차] 학급·수업·추천·템플릿·배지
   Classes.init(); Session.init(); Recommend.init(); Templates.init(); Badges.init();
+  ChiefQuiz.init(); // [추가] 촌장님 퀴즈방
   if(FB.isAdmin) setTimeout(()=>Studio.purgeOld(),8000);
   if(GS.isStudent()) setTimeout(()=>Maps.claimFans(),5000);
   if(FB.mode==='online'){ FB.onDisconnectRemove('players/'+GS.me.uid); Multi.send(performance.now(),true); }
@@ -4123,7 +4171,7 @@ function tickBody(){
     camWant.set(camTarget.x+Math.sin(camYaw)*cp*camDist,Math.max(.6,camTarget.y+Math.sin(camPitch)*camDist),camTarget.z+Math.cos(camYaw)*cp*camDist);
     camera.position.lerp(camWant,1-Math.exp(-dt*10)); camera.lookAt(camTarget);
     sun.position.set(pos.x+40,70,pos.z+25); sun.target.position.set(pos.x,0,pos.z);
-    EventSys.drive(); EventSys.updateVisuals(dt,now); Dungeon.update(dt,now); Pets.update(dt,now); Npc.update(dt,now); Raid.update(dt,now); Raid.tick(now); Party.tick(now); Season.update(dt); GS.flush();
+    EventSys.drive(); EventSys.updateVisuals(dt,now); Dungeon.update(dt,now); Pets.update(dt,now); Npc.update(dt,now); Raid.update(dt,now); Raid.tick(now); Party.tick(now); Season.update(dt); ChiefQuiz.update(); GS.flush();
     if(now-lastHud2>3000){ lastHud2=now; UI.hud(); if(GS.isStudent()){ Daily.ensure(); if(Attendance.pending&&!UI.modal){ Attendance.pending=false; if(!Attendance.claimedToday()) UI.open('attend'); } } }
     if(now-lastHud>500){ lastHud=now; UI.eventHud(); UI.dungeonHud(); UI.locHud(); UI.partyHud(); UI.raidHud(); UI.visitBar(); UI.socialBadge(); Social.showQueued(); UI.seasonHud(); UI.netHud(); UI.classHud(); if(FB.isAdmin) Session.tick(); if(UI.modal==='admin'&&['event','dungeon'].includes(adm.tab)) UI.render(); }
   } else { const t=now/9000; camera.position.set(Math.sin(t)*38,22,Math.cos(t)*38); camera.lookAt(0,0,0); }
@@ -4913,6 +4961,189 @@ panelEl.addEventListener('click',async e=>{
     case 'st-tpl': Templates.fromContent(d.id); break;
   }
 });
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║ §41 [추가] CHIEF QUIZ — 촌장님 퀴즈방 (선생님이 직접 내는 퀴즈)  ║
+   ╚══════════════════════════════════════════════════════════════╝
+   chiefQuiz/{qid}          = {q, type:'choice'|'short', options[], ah[](정답 암호값), hint, reward:{coins,exp}, open, at}
+   chiefQuizKey/{qid}       = {answer}      ← 진짜 정답 글자는 선생님만 읽을 수 있어요
+   chiefQuizAns/{qid}/{uid} = {name, ok, tries, firstOk, last(마지막으로 적은 답), at}   ← 선생님 결과 화면용
+   inventory/{uid}.cq       = {qid:{ok, tries, firstOk}}   ← 내 풀이 상태 (보상 중복 방지는 claims['cq:'+qid])
+   ⚠ TODO(서버): 채점·보상은 Cloud Functions(onCall: answerChiefQuiz)로 옮기면 조작을 완전히 막을 수 있어요. */
+const CQ={qMax:80,optMax:30,ansMax:40,hintMax:40,maxOptions:4,coinMax:100,expMax:200};
+const cqNorm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' ').replace(/[.!?,~]+$/,'');
+const cqHash=s=>'h'+hashStr('cq:'+cqNorm(s)).toString(36);
+const cqs={sel:null,msg:'',ok:false,hint:false}, cqf={edit:null,draft:null,open:{}};
+const ChiefQuiz={
+  all:{}, keys:{}, answers:{}, loaded:false, sign:null, last:0,
+  init(){
+    this.makeSign();
+    FB.on('chiefQuiz',v=>{ const prev=this.all; this.all=v||{}; if(this.loaded) this.notifyNew(prev); this.loaded=true;
+      this.updateSign(); this.refreshAdmin(); if(UI.modal==='chiefquiz') UI.render(); });
+    if(FB.isAdmin){
+      FB.on('chiefQuizKey',v=>{ this.keys=v||{}; this.refreshAdmin(); });
+      FB.on('chiefQuizAns',v=>{ this.answers=v||{}; this.refreshAdmin(); });
+    }
+  },
+  st(qid){ if(!GS.inv) return {}; if(!GS.inv.cq||typeof GS.inv.cq!=='object') GS.inv.cq={}; return GS.inv.cq[qid]||{ok:false,tries:0}; },
+  list(all=false){ return Object.entries(this.all).filter(([,Q])=>Q&&(all||Q.open)).sort((a,b)=>(b[1].at||0)-(a[1].at||0)); },
+  unsolved(){ return GS.isStudent()?this.list().filter(([id])=>!this.st(id).ok).length:0; },
+  notifyNew(prev){
+    if(!GS.isStudent()) return;
+    const fresh=this.list().filter(([id])=>!prev[id]?.open);
+    if(fresh.length){ toast(`👑 촌장님이 새 퀴즈를 냈어요! <b>촌장님 집</b>으로 가 봐요.`,5000); tune([523,659,784]); }
+  },
+  // 촌장님 집 위에 떠 있는 ❓ 표시 (안 푼 문제가 있을 때만)
+  makeSign(){ const a=30*Math.PI/180; this.sign=textSprite('❓ 촌장님 퀴즈!',{font:'52px Jua',h:.8,bg:'rgba(201,139,0,.95)'});
+    this.sign.position.set(Math.sin(a)*10.5,9.3,-Math.cos(a)*10.5); this.sign.visible=false; scene.add(this.sign); },
+  updateSign(){ if(this.sign) this.sign.visible=this.unsolved()>0; },
+  update(){ if(this.sign?.visible) this.sign.position.y=9.3+Math.sin(performance.now()/400)*.15; },
+  refreshAdmin(){ if(UI.modal!=='admin'||adm.tab!=='cquiz') return; cqCapture(); UI.render(); },
+  // --- 학생: 답 내기 ---
+  async answer(qid,val){
+    const Q=this.all[qid]; if(!Q||!Q.open) return toast('지금은 풀 수 없는 문제예요.');
+    const raw=String(val??'').slice(0,CQ.ansMax); if(!cqNorm(raw)) return toast('답을 적어 주세요.');
+    const t=performance.now(); if(t-this.last<1200) return; this.last=t; // 연타 방지
+    const ok=[].concat(Q.ah||[]).includes(cqHash(raw));
+    cqs.ok=ok; cqs.msg=ok?'⭕ 정답이에요! 촌장님이 칭찬해요.':'❌ 아쉬워요. 다시 생각해 볼까요?';
+    if(ok){ tune([659,880,1047]); if(player) burst(pos.x,2,pos.z,0xffc93c,16); } else beep(180,.25,'sawtooth',.05);
+    if(!GS.isStudent()){ cqs.msg+=' (선생님 미리 보기라 기록되지 않아요)'; UI.render(); return; }
+    const s=this.st(qid); if(s.ok){ UI.render(); return; }
+    s.tries=(s.tries||0)+1; if(s.tries===1) s.firstOk=ok; if(ok) s.ok=true;
+    GS.inv.cq[qid]=s; GS.change();
+    FB.set(`chiefQuizAns/${qid}/${GS.me.uid}`,{name:GS.me.name,ok:!!s.ok,tries:s.tries,firstOk:!!s.firstOk,last:raw,at:FB.serverTs()}).catch(()=>{});
+    if(ok){ Bus.emit('learn',{kind:'quiz'});
+      if(Rewards.give('cq:'+qid,Q.reward||{coins:10,exp:10})) cqs.msg+=`  보상 ${rewardText(Q.reward||{coins:10,exp:10})}`; }
+    this.updateSign(); UI.render();
+  },
+  // --- 선생님: 만들기·고치기·지우기 ---
+  async save(f){
+    if(!FB.isAdmin) return;
+    const q=String(f.q||'').trim().slice(0,CQ.qMax); if(!q) return toast('문제를 적어 주세요.');
+    const type=f.type==='short'?'short':'choice', hint=String(f.hint||'').trim().slice(0,CQ.hintMax);
+    const reward={coins:Math.max(0,Math.min(CQ.coinMax,Math.round(+f.coins||0))),exp:Math.max(0,Math.min(CQ.expMax,Math.round(+f.exp||0)))};
+    let options=[], answer='', ah=[];
+    if(type==='choice'){
+      options=(f.options||[]).map(o=>String(o||'').trim().slice(0,CQ.optMax)).filter(Boolean);
+      if(options.length<2) return toast('보기를 2개 이상 적어 주세요.');
+      if(new Set(options.map(cqNorm)).size!==options.length) return toast('똑같은 보기가 있어요. 보기를 다르게 적어 주세요.');
+      answer=String(f.options?.[+f.correct]??'').trim(); if(!answer) return toast('정답 보기를 골라 주세요. (정답 보기에 글자가 있어야 해요)');
+      ah=[cqHash(answer)];
+    } else {
+      answer=String(f.short||'').trim().slice(0,CQ.ansMax*2); const alts=answer.split('/').map(s=>s.trim()).filter(Boolean);
+      if(!alts.length) return toast('정답을 적어 주세요. 여러 개면 / 로 나눠요. (예: apple / an apple)');
+      ah=[...new Set(alts.map(cqHash))];
+    }
+    const id=f.id||('cq'+FB.now().toString(36)+Math.random().toString(36).slice(2,4));
+    const prevAt=this.all[id]?.at||FB.now();
+    try{
+      await FB.set('chiefQuiz/'+id,{q,type,options,ah,hint,reward,open:!!f.open,at:prevAt});
+      await FB.set('chiefQuizKey/'+id,{answer});
+      toast(f.id?'✏️ 문제를 고쳤어요.':f.open?'📢 문제를 내고 학생들에게 공개했어요!':'💾 문제를 저장했어요. 공개를 누르면 학생에게 보여요.');
+      cqf.edit=null; cqf.draft=null; UI.render();
+    }catch(e){ toast('저장하지 못했어요. 보안 규칙에 chiefQuiz가 있는지 확인해 주세요.'); }
+  },
+  setOpen(id,v){ FB.update('chiefQuiz/'+id,{open:!!v,...(v?{at:FB.now()}:{})}); toast(v?'📢 학생들에게 공개했어요.':'🙈 숨겼어요. 학생 화면에서 사라져요.'); },
+  async remove(id){ if(!confirm('이 문제와 학생들의 풀이 기록을 지울까요?')) return;
+    await FB.remove('chiefQuizAns/'+id).catch(()=>{}); await FB.remove('chiefQuizKey/'+id).catch(()=>{}); await FB.remove('chiefQuiz/'+id).catch(()=>{}); toast('🗑 문제를 지웠어요.'); },
+  stats(id){ const rows=Object.entries(this.answers[id]||{}); const n=rows.length, ok=rows.filter(([,r])=>r.ok).length, first=rows.filter(([,r])=>r.firstOk).length;
+    return {rows,n,ok,first,rate:n?Math.round(first/n*100):null}; }
+};
+function cqCapture(){ // 선생님이 문제를 쓰는 중에 화면이 새로 그려져도 적던 글이 사라지지 않게 해요
+  const g=id=>document.getElementById(id); if(!g('cq-q')) return;
+  cqf.draft={q:g('cq-q').value,type:g('cq-type').value,options:[0,1,2,3].map(i=>g('cq-o'+i)?.value||''),
+    correct:+(document.querySelector('input[name="cq-correct"]:checked')?.value??0),short:g('cq-short')?.value||'',hint:g('cq-hint').value,
+    coins:g('cq-coins').value,exp:g('cq-exp').value,open:g('cq-open').checked,id:cqf.edit};
+}
+
+// --- 학생 화면: 촌장님 퀴즈방 ---
+function renderChiefQuiz(){
+  let h=head('👑 촌장님 퀴즈방','촌장님(선생님)이 직접 낸 문제예요. 처음 맞히면 보상을 받고, 틀려도 다시 도전할 수 있어요!');
+  const Q=cqs.sel&&ChiefQuiz.all[cqs.sel];
+  if(Q&&(Q.open||!GS.isStudent())){
+    const s=ChiefQuiz.st(cqs.sel), done=GS.isStudent()&&s.ok;
+    h+=`<button class="btn sm" data-act="cq-back">← 문제 목록</button>
+      <div class="craft" style="margin-top:10px"><div class="craft-top"><span class="craft-ko" style="font-size:22px;line-height:1.5">${esc(Q.q)}</span></div>`;
+    if(cqs.msg) h+=`<p class="result ${cqs.ok?'ok':'no'}">${esc(cqs.msg)}</p>`;
+    if(done) h+='<p class="p-sub">✅ 이미 맞힌 문제예요. 다른 문제도 풀어 볼까요?</p>';
+    else if(Q.type==='choice') h+=`<div class="choices">${(Q.options||[]).map((o,i)=>`<button class="wtile" data-act="cq-opt" data-i="${i}">${esc(o)}</button>`).join('')}</div>`;
+    else h+=`<div class="form"><label class="wide">답 적기 <input id="cq-in" maxlength="${CQ.ansMax}" autocomplete="off" placeholder="여기에 답을 적어요"></label>
+      <div><button class="btn gem" data-act="cq-submit">제출하기</button></div></div><p class="hint">대문자·소문자, 끝의 마침표는 신경 쓰지 않아도 돼요.</p>`;
+    if(Q.hint&&!done) h+=cqs.hint?`<p class="hint">💡 힌트: ${esc(Q.hint)}</p>`:'<button class="btn sm" data-act="cq-hint">💡 힌트 보기</button>';
+    h+=`<p class="hint">보상: ${rewardText(Q.reward||{})}${GS.isStudent()&&s.tries?` · 지금까지 ${s.tries}번 도전`:''}</p></div>`;
+    return h;
+  }
+  const list=ChiefQuiz.list();
+  h+=list.length?'<div class="recs">'+list.map(([id,Q2],i)=>{ const s=ChiefQuiz.st(id);
+    const tag=!GS.isStudent()?'👀 미리 보기':s.ok?'✅ 맞혔어요':s.tries?`🔁 다시 도전 (${s.tries}번 시도)`:'🆕 아직 안 풀었어요';
+    return `<div class="rec"><span class="e">${s.ok?'🏅':'❓'}</span><div><b>${i+1}. ${esc(Q2.q.length>40?Q2.q.slice(0,40)+'…':Q2.q)}</b><p>${tag} · ${Q2.type==='choice'?'고르기':'직접 쓰기'} · ${rewardText(Q2.reward||{})}</p></div>
+      <button class="btn ${s.ok?'':'gem'} sm" data-act="cq-sel" data-id="${id}">${s.ok?'다시 보기':'풀기'}</button></div>`; }).join('')+'</div>'
+    :'<p class="empty">아직 촌장님이 낸 퀴즈가 없어요. 조금만 기다려 주세요!</p>';
+  if(GS.isStudent()) h+='<div style="margin-top:14px"><button class="btn sm" data-act="cq-board">📜 의뢰 게시판 보기</button></div>';
+  else h+='<p class="hint">선생님은 여기서 학생 화면을 미리 볼 수 있어요. 문제 만들기는 👑 집무실 → ❓ 촌장님 퀴즈 탭에서 해요.</p>';
+  return h;
+}
+
+// --- 선생님 화면: 집무실 ❓ 촌장님 퀴즈 탭 ---
+function renderAdminCQ(){
+  const E=cqf.edit&&ChiefQuiz.all[cqf.edit], D=cqf.draft||(E?{q:E.q,type:E.type,options:[...(E.options||[]),'','','',''].slice(0,4),
+    correct:Math.max(0,(E.options||[]).findIndex(o=>cqNorm(o)===cqNorm(ChiefQuiz.keys[cqf.edit]?.answer))),short:E.type==='short'?(ChiefQuiz.keys[cqf.edit]?.answer||''):'',
+    hint:E.hint||'',coins:E.reward?.coins??10,exp:E.reward?.exp??10,open:!!E.open}:{q:'',type:'choice',options:['','','',''],correct:0,short:'',hint:'',coins:10,exp:10,open:true});
+  const choice=D.type!=='short';
+  let h=`<h3>${cqf.edit?'✏️ 문제 고치기':'➕ 새 문제 내기'}</h3>
+    <div class="form">
+      <label class="wide">문제 (${CQ.qMax}자까지) <input id="cq-q" maxlength="${CQ.qMax}" value="${esc(D.q)}" placeholder="예: '사과'를 영어로 뭐라고 할까요?"></label>
+      <label>문제 유형 <select id="cq-type"><option value="choice" ${choice?'selected':''}>보기 고르기(객관식)</option><option value="short" ${choice?'':'selected'}>직접 쓰기(주관식)</option></select></label>
+      <div class="wide" id="cq-choice-box" style="${choice?'':'display:none'}"><b>보기</b> — 정답인 보기의 동그라미를 눌러 주세요 (2~4개)
+        ${[0,1,2,3].map(i=>`<label style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="radio" name="cq-correct" value="${i}" ${+D.correct===i?'checked':''} style="width:auto">
+          <input id="cq-o${i}" maxlength="${CQ.optMax}" value="${esc(D.options[i]||'')}" placeholder="보기 ${i+1}${i>=2?' (비워도 돼요)':''}"></label>`).join('')}</div>
+      <label class="wide" id="cq-short-box" style="${choice?'display:none':''}">정답 (여러 개 인정하려면 / 로 나눠요) <input id="cq-short" maxlength="${CQ.ansMax*2}" value="${esc(D.short)}" placeholder="예: apple / an apple"></label>
+      <label class="wide">힌트 (선택) <input id="cq-hint" maxlength="${CQ.hintMax}" value="${esc(D.hint)}" placeholder="예: 빨갛고 아삭한 과일이에요"></label>
+      <label>보상 코인 <input id="cq-coins" type="number" min="0" max="${CQ.coinMax}" value="${esc(D.coins)}"></label>
+      <label>보상 경험치 <input id="cq-exp" type="number" min="0" max="${CQ.expMax}" value="${esc(D.exp)}"></label>
+      <label class="wide"><input type="checkbox" id="cq-open" ${D.open?'checked':''} style="width:auto"> 저장하면 바로 학생들에게 공개하기</label>
+      <div><button class="btn gem" data-act="cq-save">${cqf.edit?'💾 고친 내용 저장':'📢 문제 내기'}</button> ${cqf.edit?'<button class="btn" data-act="cq-cancel">취소</button>':''}</div>
+    </div>
+    <p class="hint">학생은 마을 광장의 👑 촌장님 집을 눌러 문제를 풀어요. 대문자·소문자, 띄어쓰기 여러 칸, 끝의 마침표는 채점할 때 무시해요.</p>`;
+  const list=ChiefQuiz.list(true);
+  h+=`<h3>📋 낸 문제 ${list.length}개</h3>`+(list.map(([id,Q])=>{ const S=ChiefQuiz.stats(id), key=ChiefQuiz.keys[id]?.answer, op=cqf.open[id];
+    return `<div class="quest ${Q.open?'today':''}"><div class="q-head"><span class="q-title">${esc(Q.q)}</span><span class="q-date">${Q.open?'📢 공개 중':'🙈 숨김'}</span></div>
+      <p class="q-note">${Q.type==='choice'?`보기: ${(Q.options||[]).map(o=>cqNorm(o)===cqNorm(key)?`<b>✔ ${esc(o)}</b>`:esc(o)).join(' · ')}`:`정답: <b>${esc(key||'?')}</b>`}
+        ${Q.hint?`<br>힌트: ${esc(Q.hint)}`:''}<br>보상 ${rewardText(Q.reward||{})} · 푼 학생 ${S.n}명 · 맞힌 학생 ${S.ok}명 · 첫 시도 정답률 ${S.rate===null?'-':S.rate+'%'}</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn ${Q.open?'':'leaf'} sm" data-act="cq-open" data-id="${id}" data-v="${Q.open?0:1}">${Q.open?'🙈 숨기기':'📢 공개하기'}</button>
+        <button class="btn sm" data-act="cq-edit" data-id="${id}">✏️ 고치기</button>
+        <button class="btn sm" data-act="cq-try" data-id="${id}">🧪 미리 풀어 보기</button>
+        <button class="btn sm" data-act="cq-res" data-id="${id}">${op?'결과 접기':'📊 학생별 결과'}</button>
+        <button class="btn berry sm" data-act="cq-del" data-id="${id}">🗑</button></div>
+      ${op?(S.rows.length?`<div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th>학생</th><th>결과</th><th>도전</th><th>마지막으로 적은 답</th></tr></thead><tbody>${
+        S.rows.sort((a,b)=>nameSort(realName(a[0]),realName(b[0]))).map(([u,r])=>`<tr><td>${esc(realName(u))}<br><small>${esc(r.name||'')}</small></td><td>${r.ok?(r.firstOk?'⭕ 한 번에':'⭕ 다시 풀어서'):'❌ 아직'}</td><td>${r.tries||0}번</td><td>${esc(r.last||'')}</td></tr>`).join('')}</tbody></table></div>`
+        :'<p class="empty">아직 푼 학생이 없어요.</p>'):''}</div>`; }).join('')||'<p class="empty">아직 낸 문제가 없어요. 위에서 첫 문제를 내 보세요!</p>');
+  return h;
+}
+
+// --- 클릭 처리 (촌장님 퀴즈) ---
+panelEl.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]'); if(!t) return; const d=t.dataset;
+  switch(d.act){
+    case 'cq-sel': cqs.sel=d.id; cqs.msg=''; cqs.hint=false; UI.render(); setTimeout(()=>document.getElementById('cq-in')?.focus(),50); break;
+    case 'cq-back': cqs.sel=null; cqs.msg=''; cqs.hint=false; UI.render(); break;
+    case 'cq-hint': cqs.hint=true; UI.render(); break;
+    case 'cq-opt': { const Q=ChiefQuiz.all[cqs.sel]; if(Q) ChiefQuiz.answer(cqs.sel,Q.options[+d.i]); break; }
+    case 'cq-submit': ChiefQuiz.answer(cqs.sel,document.getElementById('cq-in')?.value); break;
+    case 'cq-board': UI.open('board'); break;
+    case 'cq-save': cqCapture(); ChiefQuiz.save({...cqf.draft,id:cqf.edit}); break;
+    case 'cq-cancel': cqf.edit=null; cqf.draft=null; UI.render(); break;
+    case 'cq-edit': cqf.edit=d.id; cqf.draft=null; UI.render(); panelEl.scrollTop=0; break;
+    case 'cq-open': ChiefQuiz.setOpen(d.id,d.v==='1'); break;
+    case 'cq-del': ChiefQuiz.remove(d.id); break;
+    case 'cq-res': cqf.open[d.id]=!cqf.open[d.id]; cqCapture(); UI.render(); break;
+    case 'cq-try': cqs.sel=d.id; cqs.msg=''; cqs.hint=false; UI.open('chiefquiz'); break;
+  }
+});
+panelEl.addEventListener('change',e=>{ if(e.target.id==='cq-type'){ const c=e.target.value!=='short';
+  document.getElementById('cq-choice-box').style.display=c?'':'none'; document.getElementById('cq-short-box').style.display=c?'none':''; } });
+panelEl.addEventListener('keydown',e=>{ if(e.target.id==='cq-in'&&e.key==='Enter'){ e.preventDefault(); ChiefQuiz.answer(cqs.sel,e.target.value); } });
 </script>
 </body>
 </html>
