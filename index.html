@@ -3594,10 +3594,28 @@ const UI={
       mylog:renderMylog,lesson:renderLesson,lessonresult:renderLessonResult,chiefroom:renderChiefRoomEntry}[this.modal]; // [5차] // [2차] npc·shop·craft·attend
     panelEl.className='panel'+(['battle','dgresult','raid','raidresult'].includes(this.modal)?' dark':''); panelEl.innerHTML=f(); panelEl.scrollTop=st;
   },
+  // [수정] 학생들이 놀면서 데이터가 바뀔 때 쓰는 다시 그리기예요. 선생님이 적던 글·체크·커서 위치를 그대로 지켜요.
+  softRender(){
+    if(!this.modal) return;
+    const keyOf=el=>el.id||(el.name?`${el.name}=${el.value}`:null), saved={}, act=document.activeElement;
+    let focusKey=null, sel=null;
+    panelEl.querySelectorAll('input,textarea,select').forEach(el=>{ const k=keyOf(el); if(!k) return;
+      saved[k]=(el.type==='checkbox'||el.type==='radio')?{c:el.checked}:{v:el.value};
+      if(el===act){ focusKey=k; try{ sel=[el.selectionStart,el.selectionEnd]; }catch(e){ sel=null; } } });
+    const openDetails=[...panelEl.querySelectorAll('details')].map(d=>d.open);
+    this.render();
+    panelEl.querySelectorAll('input,textarea,select').forEach(el=>{ const k=keyOf(el), v=k&&saved[k]; if(!v) return;
+      if('c' in v) el.checked=v.c; else if(el.value!==v.v) el.value=v.v; });
+    panelEl.querySelectorAll('details').forEach((d,i)=>{ if(openDetails[i]!==undefined) d.open=openDetails[i]; });
+    // 보기 고르기/직접 쓰기 칸 보이기 상태도 맞춰요
+    const ty=document.getElementById('cq-type'); if(ty){ const c=ty.value==='choice'; const a=document.getElementById('cq-choice-box'), b=document.getElementById('cq-short-box'); if(a) a.style.display=c?'':'none'; if(b) b.style.display=c?'none':''; }
+    if(focusKey){ const el=[...panelEl.querySelectorAll('input,textarea,select')].find(x=>keyOf(x)===focusKey);
+      if(el){ el.focus({preventScroll:true}); if(sel&&el.setSelectionRange) try{ el.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
+  },
   refresh(){ this.hud(); if(!this.modal) return;
     if(this.modal==='admin'&&['quest','notice'].includes(adm.tab)){ const el=$('#adm-list'); if(el) el.innerHTML=adminQuestList(); return; }
-    if(['board','rank','admin','bag'].includes(this.modal)) this.render(); },
-  refreshAdmin(){ if(this.modal==='admin'&&['event','dungeon','check','stats','daily','raid','maps','reports','season','studio','analytics','trash','class','lesson','templates','weekly'].includes(adm.tab)) this.render(); },
+    if(['board','rank','admin','bag'].includes(this.modal)) this.softRender(); },
+  refreshAdmin(){ if(this.modal==='admin'&&['event','dungeon','check','stats','daily','raid','maps','reports','season','studio','analytics','trash','class','lesson','templates','weekly'].includes(adm.tab)) this.softRender(); },
   openQuiz(q,opts){ this.qz={q,opts,res:null,busy:false}; this.open('quiz'); },
   prompt(html){ const el=$('#prompt'); if(!html){ el.classList.add('hidden'); this.lastPrompt=''; return; } el.classList.remove('hidden'); if(html!==this.lastPrompt){ el.innerHTML=html; this.lastPrompt=html; } },
   hud(){ // [2차] 레벨·경험치·코인·보석·기운
@@ -4202,7 +4220,7 @@ function tickBody(){
     sun.position.set(pos.x+40,70,pos.z+25); sun.target.position.set(pos.x,0,pos.z);
     EventSys.drive(); EventSys.updateVisuals(dt,now); Dungeon.update(dt,now); Pets.update(dt,now); Npc.update(dt,now); Raid.update(dt,now); Raid.tick(now); Party.tick(now); Season.update(dt); ChiefRoom.update(dt); GS.flush();
     if(now-lastHud2>3000){ lastHud2=now; UI.hud(); if(GS.isStudent()){ Daily.ensure(); if(Attendance.pending&&!UI.modal){ Attendance.pending=false; if(!Attendance.claimedToday()) UI.open('attend'); } } }
-    if(now-lastHud>500){ lastHud=now; UI.eventHud(); UI.dungeonHud(); UI.locHud(); UI.partyHud(); UI.raidHud(); UI.visitBar(); UI.socialBadge(); Social.showQueued(); UI.seasonHud(); UI.netHud(); UI.classHud(); UI.croomHud(); if(FB.isAdmin) Session.tick(); if(UI.modal==='admin'&&['event','dungeon'].includes(adm.tab)) UI.render(); }
+    if(now-lastHud>500){ lastHud=now; UI.eventHud(); UI.dungeonHud(); UI.locHud(); UI.partyHud(); UI.raidHud(); UI.visitBar(); UI.socialBadge(); Social.showQueued(); UI.seasonHud(); UI.netHud(); UI.classHud(); UI.croomHud(); if(FB.isAdmin) Session.tick(); if(UI.modal==='admin'&&['event','dungeon'].includes(adm.tab)) UI.softRender(); }
   } else { const t=now/9000; camera.position.set(Math.sin(t)*38,22,Math.cos(t)*38); camera.lookAt(0,0,0); }
   if(!Dungeon.inside) for(const o of ores){
     if(!o.active){ if(now>o.respawn){ o.active=true; o.hp=Growth.pickHits(); o.g.visible=true; setOreLetter(o,pickLetter(o.lesson)); } continue; }
@@ -5019,7 +5037,7 @@ const ChiefQuiz={
     FB.on('chiefQuiz',v=>{ this.all=v||{}; this.refreshAdmin(); ChiefRoom.renderPanel(); });
     FB.on('chiefQuizKey',v=>{ this.keys=v||{}; this.refreshAdmin(); }); },
   list(){ return Object.entries(this.all).filter(([,Q])=>Q).sort((a,b)=>(b[1].at||0)-(a[1].at||0)); },
-  refreshAdmin(){ if(UI.modal!=='admin'||adm.tab!=='cquiz') return; cqCapture(); UI.render(); },
+  refreshAdmin(){ if(UI.modal!=='admin'||adm.tab!=='cquiz') return; UI.softRender(); },
   update(){},
   async save(f){
     if(!FB.isAdmin) return;
